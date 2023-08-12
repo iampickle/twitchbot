@@ -1,0 +1,3 @@
+[submodule "modules/twitterbot/GerVADER"]
+	path = modules/twitterbot/GerVADER
+	url = https://github.com/iampickle/GerVADER.git
