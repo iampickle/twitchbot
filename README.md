@@ -78,7 +78,7 @@ automatic twitchdownloader with optional twitter-bot function
    		│	└── steamer2-date/ 
    		│		├── 2b762e54-a315-495c-bd62-f65ee4f5390e.png(viewer chart) 
    		│		├── output/
-   		│ 	        │     └── stitched.mp4 
+   		│ 	   │     └── stitched.mp4 
    		│ 		└── stream.mp4 
    		└── .yt-credentials/ 
    			└── client_secret.json
