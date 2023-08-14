@@ -1,4 +1,4 @@
-# twitchbot
+# ![](assets/20230815_003809_logo.png) twitchbot
 
 automatic twitchdownloader with optional twitter-bot function
 
@@ -10,12 +10,14 @@ automatic twitchdownloader with optional twitter-bot function
 - requirements.txt
 - a storage for the streams and yt credentials
 - .env files for twitter/twitch/ifttt credential
+- Linux/MacOS/windows(might requier a bit more tinkering in comparison to the first 2)
 
 **installation**
 
 1. clone the repo
    `git clone https://github.com/iampickle/twitchbot.git`
 2. conda env
+
    ```bash
    conda create -n -tbot
    conda install pip
@@ -24,6 +26,7 @@ automatic twitchdownloader with optional twitter-bot function
    `pip install -r requirements.txt`
 4. customize channels.json
    -example-
+
    ```json
    {
      "streamers": {
@@ -43,6 +46,7 @@ automatic twitchdownloader with optional twitter-bot function
    }
    ```
 5. create .env
+
    ```env
    #important dirs
    conda-path=/home/<user>/miniconda3/bin/activate # <= very important
@@ -69,6 +73,7 @@ automatic twitchdownloader with optional twitter-bot function
    ```
 6. create dir for tbot
    example: /your/folder/...
+
    ```tree
     .
     └── mainfolder/ 
@@ -87,7 +92,8 @@ automatic twitchdownloader with optional twitter-bot function
 7. .yt-credentials/
    client_secret.json([tutorial](https://developers.google.com/youtube/v3/guides/authentication?hl=de))
    Verification of endpoint needs to be started(endless uncompletion)
-   ![enter image description here](https://i.imgur.com/TKsc7DA.png)
+
+   ![](assets/20230815_003354_TKsc7DA.png)
 
 ## License
 
