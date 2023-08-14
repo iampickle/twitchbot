@@ -1,6 +1,7 @@
 {
   "streamers": {
     "dvdplayerscreensaver": {
+      "ytupload": true,
       "tbot": {
         "start": 1,
         "end": 0.5,
