@@ -151,9 +151,10 @@ def dlstream(channel, filename, workdir, token):
                  
             tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(channel)]['tbot']['words'], channel=channel)
             tbs.start()            
-        
-            p = Process(target=fixm, args=(workdir, tempfilename5, tempfilename2, filename, log, 1, channel, udate,))
-            p.start()
+        if 'ytupload' in channelconf['streamers'][channel]:
+            if channelconf['streamers'][channel]['ytupload'] == True:
+                p = Process(target=fixm, args=(workdir, tempfilename5, tempfilename2, filename, log, 1, channel, udate,))
+                p.start()
         else:
             p = Process(target=fixm, args=(workdir, tempfilename, tempfilename2, filename, log, 0, channel, udate,))
             p.start()

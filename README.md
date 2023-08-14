@@ -28,6 +28,7 @@ automatic twitchdownloader with optional twitter-bot function
    {
      "streamers": {
        "papaplatte": {
+         "ytupload": true, //falg to enable yt-upload
          "tbot": {
            "start": 1, //start/end is for defining the 
            "end": 0.5, //puffer auround the said word <puffer>|<word>|<puffer>
