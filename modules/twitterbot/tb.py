@@ -14,6 +14,10 @@ from .GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
 from .notification import notification
 from ..twitter import *
 
+listname = os.environ.get("channel-config")
+channelconfraw = open(listname, "r")
+channelconf = json.load(channelconfraw)
+
 
 class wordprep:
     sentence_list = []
@@ -226,13 +230,20 @@ class sentimenttweet:
 
 
 class init:
-    def __init__(self, workdir, vfile, word, sp=5, ep=3, channel='', test=False):
-        self.workdir = workdir
-        self.vfile = vfile
+    def __init__(self, path, word, sp=5, ep=3, channel='', test=False):
+        patharray = path.split('/')
+        self.workdir = "/".join(patharray[:-1])
+        self.vfile = patharray[-1:][0]
         self.word = word
         self.channel = channel
-        self.sp = sp
-        self.ep = ep
+        try:
+            if channelconf['streamers'][channel]['tbot']['start'] and channelconf['streamers']['tbot'][channel]['end']:
+                self.sp = channelconf['streamers'][channel]['start']
+                self.ep = channelconf['streamers'][channel]['end']
+        except:
+            print('start/end puffer not defined setting standart values')
+            self.sp = sp
+            self.ep = ep
         self.test = test
         print(f'|{sp}| + |video| + |{ep}|')
 

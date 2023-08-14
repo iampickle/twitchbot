@@ -1,30 +1,9 @@
 {
   "streamers": {
-    "papaplatte": {
+    "dvdplayerscreensaver": {
       "tbot": {
-        "words": [
-          "geil",
-          "perfekt"
-        ]
-      }
-    },
-    "rezo": {
-      "tbot": {
-        "words": [
-          "geil",
-          "gut"
-        ]
-      }
-    },
-    "ungespielt": {
-      "tbot": {
-        "words": [
-          "gott"
-        ]
-      }
-    },
-    "revedtv": {
-      "tbot": {
+        "start": 1,
+        "end": 0.5,
         "words": [
           "geil",
           "perfekt"

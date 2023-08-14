@@ -149,7 +149,7 @@ def dlstream(channel, filename, workdir, token):
             os.remove(workdir+tempfilename)
             log.info("🧰 file fixed")
                  
-            tbs = tb.init(workdir, tempfilename5, channelconf['streamers'][str(channel)]['tbot']['words'], channel=channel)
+            tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(channel)]['tbot']['words'], channel=channel)
             tbs.start()            
         
             p = Process(target=fixm, args=(workdir, tempfilename5, tempfilename2, filename, log, 1, channel, udate,))
