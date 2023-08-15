@@ -42,7 +42,7 @@ def countsaidwords(workdir, channel):
     plt.plot(datesarray,valuesarray)   
     plt.tick_params(axis='x', labelrotation=90)
     plt.savefig(filename)
-    tweet_pic(filename, f"chart of viewercount over stream from: {channel}")
+    tweet_pic(filename, f"chart of word count over stream from: {channel}")
 
     """ plt.hist(nparray, bins=300)
     plt.gca().set(title='Frequency Histogram', ylabel='Frequency')
