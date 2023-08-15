@@ -1,17 +1,16 @@
 import json
 import os
-from collections import Counter
 from datetime import timedelta
 from time import sleep
 from tqdm import tqdm
-import tweepy
 from moviepy.editor import *
-from tabulate import tabulate
 from vosk import SetLogLevel
 
 from .mulitthread_vosk import startanalysing
 from .GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
 from .notification import notification
+from .countwords import countsaidwords
+from .percentofmood import moodpercent
 from ..twitter import *
 
 listname = os.environ.get("channel-config")
@@ -183,50 +182,17 @@ class trimming:
 
 class sentimenttweet:
 
-    vaderanalyzer = SentimentIntensityAnalyzer()
-    
-    col = ["Wort", "X mal gesagt"]
-    allwords = []
-
-    def __init__(self, channel):
+    def __init__(self, channel, workdir):
         self.channel = channel
+        self.workdir = workdir
 
-    def tweetsentiment(self, workdir):
-        ofile = os.path.join(workdir, 'output.txt')
-        with open(str(ofile), 'r') as fr:
-            for line in fr:
-                line = str(line.rstrip())
-                line = line.replace("\"", ",")
-                line = line.replace("\'", "\"")
-                try:
-                    line = json.loads(line)
-                    if line['conf'] >= 0.8:
-                        self.allwords.append(line['word'])
-                except:
-                    pass
-        c = Counter(self.allwords)
+    def tweetsentiment(self):
+        
+        moodpercent(self.workdir, self.channel)
 
-        result = c.most_common(5)
-        tb = tabulate(result, headers=self.col, showindex=True,
-                      tablefmt='plain', stralign='center')
-        text = f'#{self.channel}\nHeute am meisten gesagte Wörter:\n{tb}'
-
-        longsentence = ' '.join(self.allwords)
-
-        vs = self.vaderanalyzer.polarity_scores(longsentence)
-        all_neg = round(vs['neg'] * 100, 3)
-        all_pos = round(vs['pos'] * 100, 3)
-        all_neu = round(vs['neu'] * 100, 3)
-
-
-        text2 = '#'+self.channel+' Die Stimmung im Stream war,\nzu '+str(all_neg)+'% neagtiv😡,'+'\nzu '+str(all_pos)+'% positiv😊,'+'\nund zu '+str(all_neu)+'% neutral😐'
-        #+'\n\nai-tweet-test: '+aisent
-
-        # tweet sentiment
-        tweet_text(text2)
-
-        # tweet most words
-        tweet_text(text)
+        countsaidwords(self.workdir, self.channel)
+        
+        
 
 
 class init:
@@ -261,7 +227,8 @@ class init:
             tr.trim_on_word()
 
             # tweet sentiment analyses
-            sentimenttweet(self.channel).tweetsentiment(self.workdir)
+            st = sentimenttweet(self.channel, self.workdir)
+            st.tweetsentiment()
 
         if self.test == 0:
             try:
