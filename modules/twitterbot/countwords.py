@@ -10,20 +10,20 @@ def countsaidwords(workdir, channel):
     name = str(uuid.uuid4())+'.png'
     filename = os.path.join(workdir, name)
     txt = os.path.join(workdir, 'output.txt')
-    datafile = open(txt, 'r')
     darray = []
     farray = []
-    for line in datafile:
-        try:
-            line = str(line.rstrip())
-            line = line.replace("\"", ",")
-            line = line.replace("\'", "\"")
-            line = json.loads(line)
-        except:
-            pass
-        time = line['start'] // 60
-        darray.append(line['start'])
-        farray.append(time)
+    with open(txt, 'r') as datafile:
+        for line in datafile:
+            try:
+                line = str(line.rstrip())
+                line = line.replace("\"", ",")
+                line = line.replace("\'", "\"")
+                line = json.loads(line)
+            except:
+                pass
+            time = line['start'] // 60
+            darray.append(line['start'])
+            farray.append(time)
     farray = np.array(farray)    
     nparray = np.array(darray)
     nparray.sort()
