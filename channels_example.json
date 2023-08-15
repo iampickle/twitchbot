@@ -1,13 +1,13 @@
 {
   "streamers": {
-    "dvdplayerscreensaver": {
+    "ungespielt": {
       "ytupload": true,
       "tbot": {
-        "start": 1,
+        "start": 0.5,
         "end": 0.5,
         "words": [
-          "geil",
-          "perfekt"
+          "gott",
+          "geil"
         ]
       }
     }

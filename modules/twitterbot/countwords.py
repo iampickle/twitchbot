@@ -22,33 +22,16 @@ def countsaidwords(workdir, channel):
             except:
                 pass
             time = line['start'] // 60
-            darray.append(line['start'])
             farray.append(time)
-    farray = np.array(farray)    
-    nparray = np.array(darray)
-    nparray.sort()
-
-    datesarray = []
-    valuesarray = []
-    """ last = 0
-    for i in range(0, int(farray.max()), 10):
-        count = ((last*60 < nparray) & (nparray < i*60)).sum()
-        valuesarray.append(count)
-        s = str(timedelta(minutes=i)).split(':')
-        s = f'{s[0]}:{s[1]}'
-        datesarray.append(s)
-        last = i """
+    
+    median_words = sum(farray) / len(farray)      
+    
     plt.style.use('dark_background')
     plt.hist(farray, bins=120)
     plt.title(f'Word-Count over Time:{channel}')
     plt.ylabel('Words')
-    plt.xlabel('Total')
-    plt.show()
-    """ plt.plot(datesarray,valuesarray)   
-    plt.tick_params(axis='x', labelrotation=90)"""
-    plt.savefig(filename) 
-    tweet_pic(filename, f"chart of word count over stream from: {channel}")
-
-    """ plt.hist(nparray, bins=300)
-    plt.gca().set(title='Frequency Histogram', ylabel='Frequency')
-    plt.show() """
+    plt.xlabel('Time in Minutes')
+    plt.axhline(median_words, color='#fc4f30', label='Durchschnitt')
+    plt.legend()
+    plt.savefig(filename)
+    tweet_pic(filename, f"chart of word count over stream from: {channel}") 
