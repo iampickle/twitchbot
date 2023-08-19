@@ -41,9 +41,9 @@ def upload(workdir, vid, vid_title, creator):
     video = LocalVideo(file_path=workdir+vid)
 
     # setting snippet
-    video.set_title(f'{channel} {str(vid_title)}')
+    video.set_title(str(channel)+': '+str(vid_title))
     video.set_description(f"stream backup of {creator}")
-    video.set_tags(["stream", creator, "streambackup", "backup"])
+    video.set_tags(["stream", creator])
     video.set_category("entertainment")
     video.set_default_language("de-DE")
 
