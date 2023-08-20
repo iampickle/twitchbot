@@ -27,7 +27,7 @@ def countsaidwords(workdir, channel):
             farray.append(time)
 
     plt.style.use('dark_background')
-    plt.hist(farray, bins=300)
+    plt.hist(farray, bins=130)
     plt.title(f'Word-Count over Time:{channel}')
     plt.ylabel('Words')
     plt.xlabel('Time in Minutes')
