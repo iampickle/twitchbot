@@ -45,5 +45,6 @@ def collect_data(token, stime, workdir, channel):
     # beautify the x-labels
     plt.gcf().autofmt_xdate()
     plt.savefig(filename)
+    plt.close()
     tweet_pic(filename, f"chart of viewercount over stream from: {channel}")
     #os.remove(filename)
