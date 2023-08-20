@@ -25,15 +25,11 @@ def countsaidwords(workdir, channel):
                 pass
             time = line['start'] // 60
             farray.append(time)
-    
-    median_words = sum(farray) / len(farray)      
-    
+
     plt.style.use('dark_background')
-    plt.hist(farray, bins=120)
+    plt.hist(farray, bins=300)
     plt.title(f'Word-Count over Time:{channel}')
     plt.ylabel('Words')
     plt.xlabel('Time in Minutes')
-    plt.axhline(median_words, color='#fc4f30', label='Durchschnitt')
-    plt.legend()
     plt.savefig(filename)
     tweet_pic(filename, f"chart of word count over stream from: {channel}") 
