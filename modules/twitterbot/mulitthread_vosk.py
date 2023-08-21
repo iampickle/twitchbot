@@ -50,7 +50,7 @@ def process_audio(model, filename, thread_num, num_threads, output_queue, proces
             data = process.stdout.read(4000)
             
             if len(data) == 0:
-                print('proc: ', thread_num, 'finished')
+                #print('proc: ', thread_num, 'finished')
                 process_queue.put('finished')
                 exit()
             if rec.AcceptWaveform(data):
