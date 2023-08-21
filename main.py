@@ -22,10 +22,12 @@ import modules.twitterbot.viewer_stats as viewer_stats
 import modules.weighting as weighting
 from modules.twitter import *
 
+#logsetup
 logbook.StreamHandler(sys.stdout).push_application()
 log = logbook.Logger('main')
 logbook.set_datetime_format("local")
 
+#setup env vars and stuff
 now = datetime.datetime.now()
 listname = os.environ.get("channel-config")
 channelconfraw = open(listname, "r")
@@ -123,7 +125,6 @@ def start_threads():
                 
 
 if __name__ == "__main__":
-    #trio.run(starr_threads)
     subprocess.Popen(['python', './modules/uptimecheck.py'])
     
     start_threads()
