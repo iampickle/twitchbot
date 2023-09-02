@@ -53,7 +53,7 @@ class trimming:
     jsonwordlist = []
     noti = notification()
 
-    def __init__(self, workdir, vfile, word, channel, startpadding=1, endpadding=3):
+    def __init__(self, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5):
         self.workdir = workdir
         self.vfile = vfile
         self.word = word
