@@ -9,24 +9,33 @@ import time
 
 
 def collect_data(token, stime, workdir, channel):
-    name = str(uuid.uuid4())+'.png'
-    filename = os.path.join(workdir, name)
-    client_id=os.environ.get("Client-ID-Twitch")
     url = 'https://api.twitch.tv/helix/streams?user_login=' + channel
-    x_values = []
-    y_values = []
-    while True:
-            API_HEADERS = {
+    client_id=os.environ.get("Client-ID-Twitch")
+    API_HEADERS = {
                 'Client-ID' : client_id,
                 'Authorization' : 'Bearer ' + token,
             }
+    def get_data(type):
+        req = requests.get(url, headers=API_HEADERS)
+        jsondata = req.json()
+        return jsondata['data'][0][type]
+    name = str(uuid.uuid4())+'.png'
+    filename = os.path.join(workdir, name)
+    x_values = []
+    y_values = []
+    change_title = []
+    old_title = get_data('game_name')
+    while True:
             try:
-                req = requests.get(url, headers=API_HEADERS)
-                jsondata = req.json()
-                viewer = jsondata['data'][0]['viewer_count']
+                viewer = get_data('viewer_count')
+                now_title = get_data('game_name')
+                if now_title != old_title:
+                    old_title = now_title
+                    print(now_title)
+                    change_title.append(datetime.datetime.now())
             except:
                 break
-
+            
             if checkstream.checkUser(channel, token) == True:
                 data = datetime.datetime.now()
                 x_values.append(data)
@@ -40,11 +49,14 @@ def collect_data(token, stime, workdir, channel):
 
     print('ploting')
     plt.style.use('dark_background')
+    
+    plt.axvline(change_title, color='purple', label='category change') 
     # plot
-    plt.plot(x_values,y_values)
+    plt.plot(x_values,y_values, label='viewers')
     # beautify the x-labels
     plt.gcf().autofmt_xdate()
     plt.savefig(filename)
+    plt.legend()
     plt.close()
     tweet_pic(filename, f"chart of viewercount over stream from: {channel}")
     #os.remove(filename)
