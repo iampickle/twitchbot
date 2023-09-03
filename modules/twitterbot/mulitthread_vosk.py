@@ -7,7 +7,7 @@ from moviepy.editor import AudioFileClip
 from tqdm import tqdm
 import os
 
-def process_audio(model, filename, thread_num, num_threads, output_queue, process_queue, pbar):
+def process_audio(model, filename, thread_num, num_threads, output_queue, process_queue):
     # Initialisiere den Vosk-Sprachmodell und den KaldiRecognizer
     SetLogLevel(-1)
     rec = KaldiRecognizer(model, 16000)
@@ -50,7 +50,7 @@ def process_audio(model, filename, thread_num, num_threads, output_queue, proces
             data = process.stdout.read(4000)
             
             if len(data) == 0:
-                print('proc: ', thread_num, 'finished')
+                #print('proc: ', thread_num, 'finished')
                 process_queue.put('finished')
                 exit()
             if rec.AcceptWaveform(data):
@@ -77,7 +77,7 @@ def process_audio(model, filename, thread_num, num_threads, output_queue, proces
                             
                                 
 
-def transcribe_audio(filename, num_threads, pbar):
+def transcribe_audio(filename, num_threads):
     vm = os.environ.get("vosk-model")
     # Erstelle eine Warteschlange für die Ergebnisse
     output_queue = multiprocessing.Queue()
@@ -88,7 +88,7 @@ def transcribe_audio(filename, num_threads, pbar):
     # Erstelle eine Liste der Prozesse
     processes = []
     for i in range(num_threads):
-        process = multiprocessing.Process(target=process_audio, args=(model, filename, i, num_threads, output_queue, process_queue, pbar))
+        process = multiprocessing.Process(target=process_audio, args=(model, filename, i, num_threads, output_queue, process_queue))
         processes.append(process)
 
     # Starte die Prozesse
@@ -102,7 +102,8 @@ def transcribe_audio(filename, num_threads, pbar):
         if get == 'finished':
             check_thread += 1
         else:
-            pbar.update(get)
+            pass
+            #pbar.update(get)
         
         if check_thread == num_threads:
             print('all processes finished')
@@ -124,11 +125,10 @@ def startanalysing(filename, workdir):
     audio_clip = AudioFileClip(filename)
     audio_duration = audio_clip.duration
     print(f'audio lenth: {audio_duration}')
-    pbar = tqdm(total=audio_duration)
 
     startt = time.time()
     # Führe die Transkription durch
-    results = transcribe_audio(filename, num_threads, pbar)
+    results = transcribe_audio(filename, num_threads)
     endt = time.time()
     
     elaps = endt - startt

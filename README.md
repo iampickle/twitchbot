@@ -77,17 +77,17 @@ automatic twitchdownloader with optional twitter-bot function
    ```tree
     .
     └── mainfolder/ 
-   		├── streamer1/ 
-   		│ 	└── steamer1-date/ 
-   		│ 	└── stream.mp4 
-   		├── streamer2/
-   		│	└── steamer2-date/ 
-   		│		├── 2b762e54-a315-495c-bd62-f65ee4f5390e.png(viewer chart) 
-   		│		├── output/
-   		│               │     └── stitched.mp4 
-   		│ 		└── stream.mp4 
-   		└── .yt-credentials/ 
-   			└── client_secret.json
+   	├── streamer1/ 
+   	│ 	└── steamer1-date/ 
+   	│ 	└── stream.mp4 
+   	├── streamer2/
+   	│	└── steamer2-date/ 
+   	│		├── 2b762e54-a315-495c-bd62-f65ee4f5390e.png(viewer chart) 
+   	│		├── output/
+   	│               │     └── stitched.mp4 
+   	│ 		└── stream.mp4 
+   	└── .yt-credentials/ 
+   		└── client_secret.json
    ```
 7. .yt-credentials/
    client_secret.json([tutorial](https://developers.google.com/youtube/v3/guides/authentication?hl=de))
