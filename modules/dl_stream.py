@@ -124,9 +124,9 @@ def dlstream(channel, filename, workdir, token):
         print(sorted_mp4_files)
         videos = []
         os.rename(workdir+tempfilename, workdir+'2'+tempfilename)
-        videos.append(VideoFileClip(workdir+'2'+tempfilename))
         for stream in sorted_mp4_files:
             videos.append(VideoFileClip(workdir+stream))
+        videos.append(VideoFileClip(workdir+'2'+tempfilename))
         final = concatenate_videoclips(videos)
         final.write_videofile(workdir+tempfilename)
         os.remove(workdir+'2'+tempfilename)
