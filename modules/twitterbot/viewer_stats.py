@@ -49,8 +49,7 @@ def collect_data(token, stime, workdir, channel):
 
     print('ploting')
     plt.style.use('dark_background')
-    
-    plt.axvline(change_title, color='purple', label='category change') 
+    plt.vlines(x = change_title, ymin = 0, ymax = max(y_values), color='purple', label='category change')
     # plot
     plt.plot(x_values,y_values, label='viewers')
     # beautify the x-labels
