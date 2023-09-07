@@ -92,7 +92,7 @@ def dlstream(channel, filename, workdir, token):
         for stream in streamfiles:
             videos.append(VideoFileClip(stream))
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename)
+        final.write_videofile(workdir+tempfilename, verbose=False, progress_bar=False)
         for streamfile in streamfiles:
             time.sleep(2)
             os.remove(streamfile)
@@ -128,7 +128,7 @@ def dlstream(channel, filename, workdir, token):
             videos.append(VideoFileClip(workdir+stream))
         videos.append(VideoFileClip(workdir+'2'+tempfilename))
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename)
+        final.write_videofile(workdir+tempfilename, verbose=False, progress_bar=False)
         os.remove(workdir+'2'+tempfilename)
         for stream in sorted_mp4_files:
             time.sleep(2)
