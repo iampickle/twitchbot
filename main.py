@@ -55,7 +55,7 @@ def sub1(channel, token):
             tweet_text(f'🔴 {channel} ist live!\nhttps://www.twitch.tv/{channel}\nTitel: {checkstream.get_title(channel, token)}\n#{channel}')
             log.info('📈 start plot data collection')
             plotp = Process(
-                target=viewer_stats.collect_data, args=(token, 150, workdir, channel,))
+                target=viewer_stats.collect_data, args=(token, 60, workdir, channel,))
             plotp.start()
 
     log.info("⬇️ starting download")
