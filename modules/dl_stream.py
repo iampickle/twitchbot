@@ -92,7 +92,9 @@ def dlstream(channel, filename, workdir, token):
         for stream in streamfiles:
             videos.append(VideoFileClip(stream))
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, verbose=False, progress_bar=False)
+        final.write_videofile(workdir+tempfilename, verbose=False)
+        for vin in videos:
+            vin.close()
         for streamfile in streamfiles:
             time.sleep(2)
             os.remove(streamfile)
@@ -128,7 +130,9 @@ def dlstream(channel, filename, workdir, token):
             videos.append(VideoFileClip(workdir+stream))
         videos.append(VideoFileClip(workdir+'2'+tempfilename))
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, verbose=False, progress_bar=False)
+        final.write_videofile(workdir+tempfilename, verbose=False)
+        for vin in videos:
+            vin.close()
         os.remove(workdir+'2'+tempfilename)
         for stream in sorted_mp4_files:
             time.sleep(2)
@@ -179,16 +183,18 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, u
         
     elif choosen == 1:
         vfile = VideoFileClip(os.path.join(workdir, lt1))
+        duration = vfile.duration
+        vfile.close()
         if vfile.duration >= 43200:
             vlist = ytupload.yt_pre_splitter(workdir, lt1)
             log.info("⬆️ uploading to youtube")
-            n = 1
             print(vlist)
             try:
-                for vid in vlist:
+                for n, vid in enumerate(vlist, start=1):
+                    vid = ['/'.join(vid.split('/')[:-1])+'/',vid.split('/')[-1]]
+                    print(vid)
                     ytupload.upload(vid[0], vid[1], udate+'/'+str(n), channel)
-                    n += 1
-                for vif in vlist:
+                for vid in vlist:
                     os.remove(vid)
             except Exception as e:
                 print(e)

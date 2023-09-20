@@ -2,7 +2,6 @@ import json##TEST
 import os
 from datetime import timedelta
 from time import sleep
-from tqdm import tqdm
 from moviepy.editor import *
 from vosk import SetLogLevel
 
@@ -85,8 +84,8 @@ class trimming:
             except:
                 pass
         print(f'{count} {self.word}\'s in file')
+        print('appending to cutting list ...')
         self.noti.message(f'there are {count} {self.word}, to be processed')
-        wpbar = tqdm(total=count)
 
         if count == 0:
             print('passing because no words to process')
@@ -109,22 +108,21 @@ class trimming:
                     endtimecode = self.timeconv(end)
                     #vodfile = line['word']+'-' + endtimecode.replace(":", ".")+'.mp4'
                     # print(start, end)
-                    wpbar.update(1)
                     self.editlist.append(VideoFileClip(os.path.join(
                         self.workdir, self.vfile)).subclip(start, end))
                     # print('append to list\n')
             except Exception as e:
                 print('there was n error with  appending the file:'+str(e))
-                wpbar.close()
                 pass
-        wpbar.close()
 
         print("stitching")
 
         final_clip = concatenate_videoclips(self.editlist)
         # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
         final_clip.write_videofile(os.path.join(self.workdir, 'output/', 'stitched-video.mp4'), fps=30,
-                                   temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", verbose=False, progress_bar=False)
+                                   temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", verbose=False)
+        for clip in self.editlist:
+            clip.close()
         """ subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', os.path.join(self.workdir,'output/','stitched-video-nonf.mp4'), '-c', 'copy', os.path.join(self.workdir,'output/','stitched-video.mp4'), '-y'])
         os.remove(os.path.join(self.workdir,'output/','stitched-video-nonf.mp4')) """
 
@@ -132,8 +130,11 @@ class trimming:
 
         clip = VideoFileClip(os.path.join(
             self.workdir, 'output/', 'stitched-video.mp4'))
-        print('duration:', clip.duration)
-        if clip.duration > 120:
+        duration = clip.duration
+        clip.close()
+        
+        print('duration:', duration)
+        if duration > 120:
             timessecons = clip.duration // 120
             rest = clip.duration % 120
             startsec = 0
@@ -147,21 +148,23 @@ class trimming:
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4')).subclip(start, end)
                 clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'),
-                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None, verbose=False, progress_bar=False)
+                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None, verbose=False)
+                clip.close()
                 self.uploadlist.append(str(n)+'-part.mp4')
                 n += 1
             if rest != 0:
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4'))
-
-                print(timessecons, clip.duration)
+                duration = clip.duration
+                clip.close()
+                print(timessecons, duration)
                 start = 120 * timessecons
                 end = start + rest
                 print('rest', start, end)
 
                 clip = clip.subclip(start, end)
                 clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'),
-                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None, verbose=False, progress_bar=False)
+                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None, verbose=False)
                 self.uploadlist.append(str(rest)+'-part.mp4')
         
         print(len(self.uploadlist))
@@ -217,11 +220,14 @@ class init:
         """cv = combinevids(self.workdir)
         """
         # start wordpre
-        if self.test == 0 or 3:
+        if self.test == 0 or 3 or 4:
             wp = wordprep(self.workdir, self.vfile)
-            wp.analyse()
+            if os.path.isfile(os.path.join(self.workdir, 'output.txt')) == True:
+                print('skipping analyse output.txt exists!')
+            else:
+                wp.analyse()
             
-        if self.test == 0 or 1:
+        if self.test == 0 or 1 or 4:
             # trimming and concating video also uplad to twitter
             tr = trimming(self.workdir, self.vfile, self.word, self.channel, self.sp, self.ep)
             tr.trim_on_word()
