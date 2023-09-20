@@ -43,8 +43,13 @@ def collect_data(token, stime, workdir, channel):
                 y_values.append(viewer)
 
             elif checkstream.checkUser(channel, token) == False:
-                print('exiting')
-                break
+                print('pre exit waiting 15min')
+                time.sleep(900)
+                if checkstream.checkUser(channel, token) == False:
+                    print('exiting')
+                    break
+                else:
+                    pass
             time.sleep(stime)
 
     print('ploting')

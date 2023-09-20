@@ -11,6 +11,7 @@ from simple_youtube_api.Channel import Channel
 from simple_youtube_api.LocalVideo import LocalVideo
 from ..twitter import *
 from .video_splitter import call_outside
+import glob
 
 dir = os.environ.get("dir")
 dir += '/.yt-credentials'
@@ -23,9 +24,9 @@ def yt_pre_splitter(workdir, tempfilename):
         os.mkdir(dir)
     except Exception as e:
          print(e, ", skipping step")
+    call_outside(tempfilename, 40000, workdir, 'ytsplits')
     
-    return call_outside(tempfilename, 40000, workdir, 'ytsplits')
-
+    return glob.glob(os.path.join(workdir, "ytsplits/*.mp4"))
 def indexcheck(list, index):
     try:
         list[index]
@@ -37,7 +38,7 @@ def upload(workdir, vid, vid_title, creator):
     channel = Channel()
     channel.login(os.path.join(dir,"client_secret.json"), os.path.join(dir,"credentials.storage"))
     # setting up the video that is going to be uploaded
-    print(f'Titel: {workdir+vid}')
+    print(f'Titel: {creator}: {vid_title}')
     video = LocalVideo(file_path=workdir+vid)
 
     # setting snippet
