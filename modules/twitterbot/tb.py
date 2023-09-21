@@ -1,5 +1,7 @@
-import json##TEST
+import json
 import os
+from dotenv import load_dotenv
+load_dotenv()
 from datetime import timedelta
 from time import sleep
 from moviepy.editor import *
@@ -120,7 +122,7 @@ class trimming:
         final_clip = concatenate_videoclips(self.editlist)
         # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
         final_clip.write_videofile(os.path.join(self.workdir, 'output/', 'stitched-video.mp4'), fps=30,
-                                   temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", verbose=False)
+                                   temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None)
         for clip in self.editlist:
             clip.close()
         """ subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', os.path.join(self.workdir,'output/','stitched-video-nonf.mp4'), '-c', 'copy', os.path.join(self.workdir,'output/','stitched-video.mp4'), '-y'])
@@ -156,7 +158,6 @@ class trimming:
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4'))
                 duration = clip.duration
-                clip.close()
                 print(timessecons, duration)
                 start = 120 * timessecons
                 end = start + rest
@@ -165,6 +166,7 @@ class trimming:
                 clip = clip.subclip(start, end)
                 clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'),
                                      temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None, verbose=False)
+                clip.close()
                 self.uploadlist.append(str(rest)+'-part.mp4')
         
         print(len(self.uploadlist))
@@ -206,9 +208,9 @@ class init:
         self.word = word
         self.channel = channel
         try:
-            if channelconf['streamers'][channel]['tbot']['start'] and channelconf['streamers']['tbot'][channel]['end']:
-                self.sp = channelconf['streamers'][channel]['start']
-                self.ep = channelconf['streamers'][channel]['end']
+            if channelconf['streamers'][channel]['tbot']['start'] and channelconf['streamers'][channel]['tbot']['end']:
+                self.sp = channelconf['streamers'][channel]['tbot']['start']
+                self.ep = channelconf['streamers'][channel]['tbot']['end']
         except:
             print('start/end puffer not defined setting standart values')
             self.sp = sp

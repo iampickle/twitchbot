@@ -92,7 +92,7 @@ def dlstream(channel, filename, workdir, token):
         for stream in streamfiles:
             videos.append(VideoFileClip(stream))
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, verbose=False)
+        final.write_videofile(workdir+tempfilename, verbose=False, logger=None)
         for vin in videos:
             vin.close()
         for streamfile in streamfiles:
@@ -130,7 +130,7 @@ def dlstream(channel, filename, workdir, token):
             videos.append(VideoFileClip(workdir+stream))
         videos.append(VideoFileClip(workdir+'2'+tempfilename))
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, verbose=False)
+        final.write_videofile(workdir+tempfilename, verbose=False, logger=None)
         for vin in videos:
             vin.close()
         os.remove(workdir+'2'+tempfilename)
