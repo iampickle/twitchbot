@@ -169,12 +169,11 @@ def dlstream(channel, filename, workdir, token):
 
 def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, udate=date.today()):
     time.sleep(25)
+    log.info("⚙️ starting video managing routien")
 
     lt1 = tempfilename
     lt2 = tempfilename2
     fn = filename
-
-    #subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', workdir+lt1, '-c', 'copy', workdir+lt2])
 
     if choosen == 0:
         log.info("🧰 file fixed")
@@ -185,7 +184,7 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, u
         vfile = VideoFileClip(os.path.join(workdir, lt1))
         duration = vfile.duration
         vfile.close()
-        if vfile.duration >= 43200:
+        if duration >= 43200:
             vlist = ytupload.yt_pre_splitter(workdir, lt1)
             log.info("⬆️ uploading to youtube")
             print(vlist)
