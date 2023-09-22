@@ -216,7 +216,7 @@ class init:
             self.sp = sp
             self.ep = ep
         self.test = test
-        print(f'|{sp}| + |video| + |{ep}|')
+        print(f'|{self.sp}| + |video| + |{self.ep}|')
 
     def start(self):
         """cv = combinevids(self.workdir)

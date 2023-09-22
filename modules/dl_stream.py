@@ -192,7 +192,7 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, u
                 for n, vid in enumerate(vlist, start=1):
                     vid = ['/'.join(vid.split('/')[:-1])+'/',vid.split('/')[-1]]
                     print(vid)
-                    ytupload.upload(vid[0], vid[1], udate+'/'+str(n), channel)
+                    ytupload.upload(vid[0], vid[1], str(udate)+'/'+str(n), channel)
                 for vid in vlist:
                     os.remove(vid)
             except Exception as e:
