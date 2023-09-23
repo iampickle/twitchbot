@@ -95,6 +95,20 @@ automatic twitchdownloader with optional twitter-bot function
 
    ![](assets/20230815_003354_TKsc7DA.png)
 
+## Tools (usage info)
+
+### createcredential.py
+
+-can be used if all requirements are rightfully installed
+
+-for non local applications(server) script can be executed localy or ssh-tunnel can be used in order to login via google-account
+
+### start-twitterbot.py
+
+-script needs to be copied into main-dir
+
+-vars in function args need to be manipulated
+
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
