@@ -152,7 +152,10 @@ def dlstream(channel, filename, workdir, token):
             subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', workdir+tempfilename, '-c', 'copy', workdir+tempfilename5])
             os.remove(workdir+tempfilename)
             log.info("🧰 file fixed")
-                 
+
+            #wait for os to unlock file for futher use
+            time.sleep(20)
+            
             tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(channel)]['tbot']['words'], channel=channel)
             tbs.start()            
         if 'ytupload' in channelconf['streamers'][channel]:
@@ -193,6 +196,8 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, u
                     vid = ['/'.join(vid.split('/')[:-1])+'/',vid.split('/')[-1]]
                     print(vid)
                     ytupload.upload(vid[0], vid[1], str(udate)+'/'+str(n), channel)
+                    ydir = os.path.join(workdir, "ytsplits")
+                    os.rmdir(ydir)
                 for vid in vlist:
                     os.remove(vid)
             except Exception as e:
