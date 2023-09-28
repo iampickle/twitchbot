@@ -53,6 +53,7 @@ automatic twitchdownloader with optional twitter-bot function
 
    ```env
    #important dirs
+   program-dir=<path of program location (git folder)> #important for start.sh when used in systemd
    conda-path=/home/<user>/miniconda3/bin/activate # <= very important
    dir=</your/path>
    channel-config=<./channels.json>
