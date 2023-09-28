@@ -110,8 +110,9 @@ class trimming:
                     endtimecode = self.timeconv(end)
                     #vodfile = line['word']+'-' + endtimecode.replace(":", ".")+'.mp4'
                     # print(start, end)
-                    self.editlist.append(VideoFileClip(os.path.join(
-                        self.workdir, self.vfile)).subclip(start, end))
+                    vvar = VideoFileClip(os.path.join(
+                        self.workdir, self.vfile))
+                    self.editlist.append(vvar.subclip(start, end))
                     # print('append to list\n')
             except Exception as e:
                 print('there was n error with  appending the file:'+str(e))
@@ -123,8 +124,7 @@ class trimming:
         # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
         final_clip.write_videofile(os.path.join(self.workdir, 'output/', 'stitched-video.mp4'), fps=30,
                                    temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None)
-        for clip in self.editlist:
-            clip.close()
+        vvar.close()
         """ subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', os.path.join(self.workdir,'output/','stitched-video-nonf.mp4'), '-c', 'copy', os.path.join(self.workdir,'output/','stitched-video.mp4'), '-y'])
         os.remove(os.path.join(self.workdir,'output/','stitched-video-nonf.mp4')) """
 
@@ -228,6 +228,7 @@ class init:
                 print('skipping analyse output.txt exists!')
             else:
                 wp.analyse()
+                sleep(10)
             
         if self.test == 0 or 1 or 4:
             # trimming and concating video also uplad to twitter

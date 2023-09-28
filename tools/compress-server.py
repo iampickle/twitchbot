@@ -1,0 +1,43 @@
+import asyncio
+from websockets.server import serve
+from multiprocessing import Process, SimpleQueue
+import json
+import subprocess
+
+workdir = '/Volumes/twitchbot/twitch/' #smb share of the other server to get access of the videos
+
+async def jetj(websocket, q):
+    async for message in websocket:
+        try:
+            q.put(json.loads(message))
+            await websocket.send('1')
+        except:
+            pass
+        
+#dunno chatqpt knows for shure :)
+def start_server(q):
+    async def main():
+        async with serve(lambda websocket, path: jetj(websocket, q), "0.0.0.0", 8766):
+            await asyncio.Future()  # run forever
+
+    asyncio.run(main())
+
+#compress tha shit
+def compressfile(r):
+    print('start compressing')
+    subprocess.call(['ffmpeg', '-y', '-loglevel', 'quiet', '-i', workdir+r[1]+'/'+r[1]+'-stream-'+r[2]+'/'+r[3], '-c:v', 
+'h264_videotoolbox', '-crf', '21', '-preset', 'faster', '-c:a', 'copy', workdir+r[1]+'/'+r[1]+'-stream-'+r[2]+'/'+r[4]])
+    print('finished')
+
+if __name__ == '__main__':
+    #setup websock listener
+    q = SimpleQueue()
+    server_process = Process(target=start_server, args=(q,))
+    server_process.start()
+
+    #do smth with the response
+    while True:
+        r = q.get()
+        print(r)
+        if r[0] == 'compress':
+            Process(target=compressfile, args=(r,)).start()

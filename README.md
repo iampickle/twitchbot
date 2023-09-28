@@ -34,7 +34,7 @@ automatic twitchdownloader with optional twitter-bot function
          "ytupload": true, //falg to enable yt-upload
          "tbot": {
            "start": 1, //start/end is for defining the 
-           "end": 0.5, //puffer auround the said word <puffer>|<word>|<puffer>
+           "end": 0.5, //puffer around the said word <puffer>|<word>|<puffer>
            "words": [ //if tbot obect exists also word-arry must be there
              "geil",
              "perfekt"
