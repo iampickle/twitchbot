@@ -29,6 +29,10 @@ automatic twitchdownloader with optional twitter-bot function
 
    ```json
    {
+     "compress-server": {
+       "ip": "192.168.188.12",
+       "port": "8766"
+     },
      "streamers": {
        "papaplatte": {
          "ytupload": true, //falg to enable yt-upload
