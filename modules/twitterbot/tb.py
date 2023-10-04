@@ -42,7 +42,7 @@ class wordprep:
     
 
     def analyse(self):
-        startanalysing(os.path.join(self.workdir, self.vfile), self.workdir)
+        return startanalysing(os.path.join(self.workdir, self.vfile), self.workdir)
         
 
 
@@ -54,13 +54,14 @@ class trimming:
     jsonwordlist = []
     noti = notification()
 
-    def __init__(self, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5):
+    def __init__(self, results, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5):
         self.workdir = workdir
         self.vfile = vfile
         self.word = word
         self.channel = channel
         self.startpadding = startpadding
         self.endpadding = endpadding
+        self.results = results
 
     def timeconv(self, intime):
         return str(timedelta(seconds=intime))[:-4]
@@ -68,12 +69,12 @@ class trimming:
     def trim_on_word(self):
         print(self.word)
         print("snipping")
-        with open(os.path.join(self.workdir, 'output.txt'), 'r') as fr:
-            for line in fr:
-                line = str(line.rstrip())
-                line = line.replace("\"", ",")
-                line = line.replace("\'", "\"")
-                self.jsonwordlist.append(line)
+    #with open(os.path.join(self.workdir, 'output.txt'), 'r') as fr:
+        for line in self.results:
+            #line = str(line.rstrip())
+            line = line.replace("\"", ",")
+            line = line.replace("\'", "\"")
+            self.jsonwordlist.append(line)
 
         count = 0
         for line in self.jsonwordlist:
@@ -95,6 +96,8 @@ class trimming:
 
         if os.path.isdir(os.path.join(self.workdir, 'output')) == False:
                         os.mkdir(os.path.join(self.workdir, 'output'))
+        vvar = VideoFileClip(os.path.join(
+                        self.workdir, self.vfile))
         
         for line in self.jsonwordlist:
             try:
@@ -110,8 +113,6 @@ class trimming:
                     endtimecode = self.timeconv(end)
                     #vodfile = line['word']+'-' + endtimecode.replace(":", ".")+'.mp4'
                     # print(start, end)
-                    vvar = VideoFileClip(os.path.join(
-                        self.workdir, self.vfile))
                     self.editlist.append(vvar.subclip(start, end))
                     # print('append to list\n')
             except Exception as e:
@@ -187,15 +188,16 @@ class trimming:
 
 class sentimenttweet:
 
-    def __init__(self, channel, workdir):
+    def __init__(self, channel, aresults, workdir):
         self.channel = channel
+        self.aresults = aresults
         self.workdir = workdir
-
+        
     def tweetsentiment(self):
         
-        moodpercent(self.workdir, self.channel)
+        moodpercent(self.aresults, self.channel)
 
-        countsaidwords(self.workdir, self.channel)
+        countsaidwords(self.aresults, self.workdir, self.channel)
         
         
 
@@ -226,17 +228,22 @@ class init:
             wp = wordprep(self.workdir, self.vfile)
             if os.path.isfile(os.path.join(self.workdir, 'output.txt')) == True:
                 print('skipping analyse output.txt exists!')
+                aresults = []
+                with open(os.path.join(self.workdir, 'output.txt'), 'r') as fr:
+                    for line in fr:
+                        #line = str(line.rstrip())
+                        aresults.append(line)
             else:
-                wp.analyse()
+                aresults = wp.analyse()
                 sleep(10)
             
         if self.test == 0 or 1 or 4:
             # trimming and concating video also uplad to twitter
-            tr = trimming(self.workdir, self.vfile, self.word, self.channel, self.sp, self.ep)
+            tr = trimming(aresults, self.workdir, self.vfile, self.word, self.channel, self.sp, self.ep)
             tr.trim_on_word()
 
             # tweet sentiment analyses
-            st = sentimenttweet(self.channel, self.workdir)
+            st = sentimenttweet(self.channel, aresults, self.workdir)
             st.tweetsentiment()
 
         if self.test == 0:

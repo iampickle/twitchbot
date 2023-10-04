@@ -12,7 +12,7 @@ port = channelconf['compress-server']['port']
 
 def job(user, date, infile, outfile):
     with connect(f"ws://{ip}:{port}") as websocket:
-        websocket.send(json.dumps(['compress', user, date, infile, outfile]))
+        websocket.send(json.dumps(['compress', str(user), str(date), str(infile), str(outfile)]))
         re = websocket.recv()
         if re == '1':
             return True
