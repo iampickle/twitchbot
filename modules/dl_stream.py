@@ -13,6 +13,7 @@ import json
 import modules.twitterbot.youtube_upload as ytupload
 from modules.notification import notification
 import modules.checkstream as checkstream
+from modules.compress_server_client import job
 
 noti = notification()
 from modules.twitterbot import tb 
@@ -21,6 +22,7 @@ listname = os.environ.get("channel-config")
 channelconfraw = open(listname, "r")
 channelconf = json.load(channelconfraw)
 
+cs = True if channelconf.get('compress-server') else False
 num = 0
 pool_sema = Semaphore(6)
 clip_start = 0
@@ -58,7 +60,7 @@ def dek(workdir, tempfilename, channel, log, token, pausetime=720):
         
 
 
-def dlstream(channel, filename, workdir, token):
+def dlstream(channel, filename, workdir, token, ndate):
     log = Logger(channel)
     #os.chdir(folder)
     url = 'https://www.twitch.tv/' + channel
@@ -160,17 +162,17 @@ def dlstream(channel, filename, workdir, token):
             tbs.start()            
         if 'ytupload' in channelconf['streamers'][channel]:
             if channelconf['streamers'][channel]['ytupload'] == True:
-                p = Process(target=fixm, args=(workdir, tempfilename5, tempfilename2, filename, log, 1, channel, udate,))
+                p = Process(target=fixm, args=(workdir, tempfilename5, tempfilename2, filename, log, 1, channel, ndate, udate,))
                 p.start()
         else:
-            p = Process(target=fixm, args=(workdir, tempfilename, tempfilename2, filename, log, 0, channel, udate,))
+            p = Process(target=fixm, args=(workdir, tempfilename, tempfilename2, filename, log, 0, channel, ndate, udate,))
             p.start()
     except Exception as e:  
         log.info(e)
     
     return filename
 
-def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, udate=date.today()):
+def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, ndate, udate=date.today()):
     time.sleep(25)
     log.info("⚙️ starting video managing routien")
 
@@ -180,10 +182,14 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, u
 
     if choosen == 0:
         log.info("🧰 file fixed")
-        subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', 'libx264', '-crf', '18', '-preset', 'slow', '-c:a', 'copy', workdir+fn + ".mp4"])
+        if cs == True:
+            job(channel, ndate, lt1, fn)
+        else:
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', 'libx264', '-crf', '18', '-preset', 'slow', '-c:a', 'copy', workdir+fn + ".mp4"])
         log.info("🧰 file compressed")
         
     elif choosen == 1:
+        
         vfile = VideoFileClip(os.path.join(workdir, lt1))
         duration = vfile.duration
         vfile.close()
@@ -207,12 +213,17 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, u
         else:
             ytupload.upload(workdir, lt1, udate, channel)
 
-        subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', 'libx264', '-crf', '21', '-preset', 'faster', '-c:a', 'copy', workdir+fn + ".mp4"])
-        log.info("🧰 file compressed")
         
-    try:
-        #os.remove(workdir+lt2)
-        os.remove(workdir+lt1)
-        log.info("🗑️ deleted temp files!")
-    except Exception as e:
-        log.error(f'faild to delete temp files: \n{e}')
+        if cs == True:
+            job(channel, ndate, lt1, fn)
+        else:
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', 'libx264', '-crf', '21', '-preset', 'faster', '-c:a', 'copy', workdir+fn + ".mp4"])
+            log.info("🧰 file compressed")
+            
+    if cs == True:    
+        try:
+            #os.remove(workdir+lt2)
+            os.remove(workdir+lt1)
+            log.info("🗑️ deleted temp files!")
+        except Exception as e:
+            log.error(f'faild to delete temp files: \n{e}')

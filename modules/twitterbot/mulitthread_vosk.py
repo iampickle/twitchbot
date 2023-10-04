@@ -138,3 +138,4 @@ def startanalysing(filename, workdir):
     with open(workdir+'output.txt', 'w') as f:
         for result in results:
             f.write(str(result)+'\n')
+    return results

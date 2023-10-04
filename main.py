@@ -60,7 +60,7 @@ def sub1(channel, token):
 
     log.info("⬇️ starting download")
     filename = now.strftime("%H.%M")
-    dl_stream.dlstream(channel, filename, workdir, token)
+    dl_stream.dlstream(channel, filename, workdir, token, today)
 
 #folder routine1
 def check_main_folder(channel):

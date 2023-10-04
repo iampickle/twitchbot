@@ -29,12 +29,16 @@ automatic twitchdownloader with optional twitter-bot function
 
    ```json
    {
+     "compress-server": {
+       "ip": "192.168.188.12",
+       "port": "8766"
+     },
      "streamers": {
        "papaplatte": {
          "ytupload": true, //falg to enable yt-upload
          "tbot": {
            "start": 1, //start/end is for defining the 
-           "end": 0.5, //puffer auround the said word <puffer>|<word>|<puffer>
+           "end": 0.5, //puffer around the said word <puffer>|<word>|<puffer>
            "words": [ //if tbot obect exists also word-arry must be there
              "geil",
              "perfekt"
@@ -49,6 +53,7 @@ automatic twitchdownloader with optional twitter-bot function
 
    ```env
    #important dirs
+   program-dir=<path of program location (git folder)> #important for start.sh when used in systemd
    conda-path=/home/<user>/miniconda3/bin/activate # <= very important
    dir=</your/path>
    channel-config=<./channels.json>
@@ -94,6 +99,20 @@ automatic twitchdownloader with optional twitter-bot function
    Verification of endpoint needs to be started(endless uncompletion)
 
    ![](assets/20230815_003354_TKsc7DA.png)
+
+## Tools (usage info)
+
+### createcredential.py
+
+-can be used if all requirements are rightfully installed
+
+-for non local applications(server) script can be executed localy or ssh-tunnel can be used in order to login via google-account
+
+### start-twitterbot.py
+
+-script needs to be copied into main-dir
+
+-vars in function args need to be manipulated
 
 ## License
 

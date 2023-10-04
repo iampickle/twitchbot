@@ -5,20 +5,20 @@ from .GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
 
 vaderanalyzer = SentimentIntensityAnalyzer()
 
-def moodpercent(workdir, channel):
+def moodpercent(results, channel):
     allwords = []
-    ofile = os.path.join(workdir, 'output.txt')
-    with open(str(ofile), 'r') as fr:
-        for line in fr:
-            line = str(line.rstrip())
-            line = line.replace("\"", ",")
-            line = line.replace("\'", "\"")
-            try:
-                line = json.loads(line)
-                if line['conf'] >= 0.8:
-                    allwords.append(line['word'])
-            except:
-                pass
+    #ofile = os.path.join(workdir, 'output.txt')
+    #with open(str(ofile), 'r') as fr:
+    for line in results:
+        #line = str(line.rstrip())
+        line = line.replace("\"", ",")
+        line = line.replace("\'", "\"")
+        try:
+            line = json.loads(line)
+            if line['conf'] >= 0.8:
+                allwords.append(line['word'])
+        except:
+            pass
 
 
     longsentence = ' '.join(allwords)
