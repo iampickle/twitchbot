@@ -8,7 +8,6 @@ from moviepy.editor import *
 from vosk import SetLogLevel
 
 from .mulitthread_vosk import startanalysing
-from .GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
 from .notification import notification
 from .countwords import countsaidwords
 from .percentofmood import moodpercent

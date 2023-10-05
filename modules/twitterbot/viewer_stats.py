@@ -68,5 +68,5 @@ def collect_data(token, stime, workdir, channel):
     plt.savefig(filename)
     plt.legend()
     plt.close()
-    tweet_pic(filename, f"chart of viewercount over stream from: {channel}", text=''.join(categorylegend))
+    tweet_pic(filename, f"chart of viewercount over stream from: {channel}\r{''.join(categorylegend)}")
     #os.remove(filename)
