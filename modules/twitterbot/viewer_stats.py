@@ -147,8 +147,8 @@ class vstats():
                 
         sorted_name_counts = sorted(name_counts.items(), key=lambda x: x[1], reverse=True)[:5]
         
-        table = tabulate(sorted_name_counts, headers=["Name", "Count"], tablefmt="simple")
-        tweet_pic(f[0], f"chart of viewercount over stream from: {self.channel}\r{''.join(f[1])}\rtop catter\r{table}")
+        table = tabulate(sorted_name_counts, headers=["User", "Messages"], tablefmt="simple")
+        tweet_pic(f[0], f"chart of viewercount over stream from: {self.channel}\r{''.join(f[1])}\rtop-chatter:\r{table}")
 
         
         
