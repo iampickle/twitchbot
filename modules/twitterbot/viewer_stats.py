@@ -9,7 +9,7 @@ import socket
 import time
 from tabulate import tabulate
 from multiprocessing import Process, Queue
-from modules.twitterbot.GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer 
+from modules.twitterbot.GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
 
 def connect_to_twitch_chat(channel):
             server = 'irc.chat.twitch.tv'
@@ -80,7 +80,6 @@ class vstats():
                         break
                     else:
                         pass
-                time.sleep(self.stime)
 
         print('ploting')
         plt.style.use('dark_background')
@@ -111,7 +110,9 @@ class vstats():
         bigbuarray = []
         c = 0
         while True:
-            bigbuarray.append(self.read_chat())
+            message = self.read_chat()
+            if message != None:
+                bigbuarray.append(message)
             if c == 50:
                 if checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit waiting 15min')
@@ -126,36 +127,29 @@ class vstats():
 
 
     def start(self):
-        
         cd = Process(target=self.collect_data)
         cd.start()
         vs = Process(target=self.collect_chat)
         vs.start()
+        cd.join()
+        vs.join()
         
-        c = 0
-        while True:
-            if self.fileq.qsize() > 0:
-                c += 1
-                f = self.fileq.get()
-            if self.arrayq.qsize() > 0:
-                c += 1
-                a = self.arrayq.get()
-                name_counts = {}
+        f = self.fileq.get()
+        a = self.arrayq.get()
+        name_counts = {}
 
-                for item in a:
-                    name = item[0]
-                    if name in name_counts:
-                        name_counts[name] += 1
-                    else:
-                        name_counts[name] = 1
-                        
-                sorted_name_counts = sorted(name_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        for item in a:
+            name = item[0]
+            if name in name_counts:
+                name_counts[name] += 1
+            else:
+                name_counts[name] = 1
                 
-                table = tabulate(sorted_name_counts, headers=["Name", "Count"], tablefmt="plain")
-            if c == 2:
-                tweet_pic(f[0], f"chart of viewercount over stream from: {self.channel}\r{''.join(f[1])}\r top catter{table}")
-                break
-            time.sleep(10)
+        sorted_name_counts = sorted(name_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        table = tabulate(sorted_name_counts, headers=["Name", "Count"], tablefmt="simple")
+        tweet_pic(f[0], f"chart of viewercount over stream from: {self.channel}\r{''.join(f[1])}\rtop catter\r{table}")
+
         
         
         
