@@ -7,8 +7,9 @@ import os
 listname = os.environ.get("channel-config")
 channelconfraw = open(listname, "r")
 channelconf = json.load(channelconfraw)
-ip = channelconf['compress-server']['ip']
-port = channelconf['compress-server']['port']
+if 'compress-server' in channelconf:
+    ip = channelconf['compress-server']['ip']
+    port = channelconf['compress-server']['port']
 
 def job(user, date, infile, outfile):
     with connect(f"ws://{ip}:{port}") as websocket:

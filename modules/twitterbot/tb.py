@@ -8,7 +8,6 @@ from moviepy.editor import *
 from vosk import SetLogLevel
 
 from .mulitthread_vosk import startanalysing
-from .GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
 from .notification import notification
 from .countwords import countsaidwords
 from .percentofmood import moodpercent
@@ -47,11 +46,6 @@ class wordprep:
 
 
 class trimming:
-
-    editlist = []
-    trackvods = []
-    uploadlist = []
-    jsonwordlist = []
     noti = notification()
 
     def __init__(self, results, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5):
@@ -62,6 +56,9 @@ class trimming:
         self.startpadding = startpadding
         self.endpadding = endpadding
         self.results = results
+        self.editlist = []
+        self.uploadlist = []
+        self.jsonwordlist = []
 
     def timeconv(self, intime):
         return str(timedelta(seconds=intime))[:-4]
@@ -86,13 +83,14 @@ class trimming:
                     count = count + 1
             except:
                 pass
-        print(f'{count} {self.word}\'s in file')
-        print('appending to cutting list ...')
-        self.noti.message(f'there are {count} {self.word}, to be processed')
-
+        
         if count == 0:
             print('passing because no words to process')
             return
+            
+        print(f'{count} {self.word}\'s in file')
+        print('appending to cutting list ...')
+        self.noti.message(f'there are {count} {self.word}, to be processed')
 
         if os.path.isdir(os.path.join(self.workdir, 'output')) == False:
                         os.mkdir(os.path.join(self.workdir, 'output'))
@@ -113,7 +111,11 @@ class trimming:
                     endtimecode = self.timeconv(end)
                     #vodfile = line['word']+'-' + endtimecode.replace(":", ".")+'.mp4'
                     # print(start, end)
-                    self.editlist.append(vvar.subclip(start, end))
+                    x = vvar.subclip(start, end)
+                    if x == None:
+                        pass
+                    else:
+                        self.editlist.append(x)
                     # print('append to list\n')
             except Exception as e:
                 print('there was n error with  appending the file:'+str(e))
