@@ -97,14 +97,17 @@ class vstats():
 
     def read_chat(self):
         buffer = ''
-        buffer += self.irc.recv(2048).decode('utf-8')
-        lines = buffer.split('\n')
-        buffer = lines.pop()
-        for line in lines:
-            if "PRIVMSG" in line:
-                username = line.split('!')[0][1:]
-                message = ':'.join(line.split(':')[2:])
-                return username, message, time.time()
+        try:
+            buffer += self.irc.recv(2048).decode('utf-8')
+            lines = buffer.split('\n')
+            buffer = lines.pop()
+            for line in lines:
+                if "PRIVMSG" in line:
+                    username = line.split('!')[0][1:]
+                    message = ':'.join(line.split(':')[2:])
+                    return username, message, time.time()
+        except:
+            return None
     
     def collect_chat(self):
         bigbuarray = []
