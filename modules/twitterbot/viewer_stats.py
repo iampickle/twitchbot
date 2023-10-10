@@ -105,6 +105,11 @@ class vstats():
         buffer = ''
         try:
             buffer += self.irc.recv(2048).decode('utf-8')
+            if buffer == "PING :tmi.twitch.tv\r\n":
+                self.irc.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
+                print("---SENT PONG---")
+            else:
+                print(buffer)
             lines = buffer.split('\n')
             buffer = lines.pop()
             for line in lines:
@@ -113,6 +118,7 @@ class vstats():
                     message = ':'.join(line.split(':')[2:])
                     return username, message, time.time()
         except Exception as e:
+            print(e)
             return None
     
     def collect_chat(self):
@@ -138,6 +144,7 @@ class vstats():
                     time.sleep(600)
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting chat')
+                        self.irc.close()
                         self.arrayq.put(bigbuarray)
                         break
                     else:
