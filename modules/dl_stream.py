@@ -222,7 +222,7 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
             
     if cs == True:    
         try:
-            #os.remove(workdir+lt2)
+            os.remove(workdir+lt2)
             os.remove(workdir+lt1)
             log.info("🗑️ deleted temp files!")
         except Exception as e:

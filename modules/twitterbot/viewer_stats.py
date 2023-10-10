@@ -44,7 +44,10 @@ class vstats():
         def get_data(type):
             req = requests.get(url, headers=API_HEADERS)
             jsondata = req.json()
-            return jsondata['data'][0][type]
+            try:
+                return jsondata['data'][0][type]
+            except:
+                return  None
         name = str(uuid.uuid4())+'.png'
         filename = os.path.join(self.workdir, name)
         x_values = []
@@ -125,6 +128,7 @@ class vstats():
                         self.arrayq.put(bigbuarray)
                     else:
                         pass
+            c += 1
                     
 
 
