@@ -11,14 +11,7 @@ from tabulate import tabulate
 from multiprocessing import Process, Queue
 from modules.twitterbot.GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
 
-def connect_to_twitch_chat(channel):
-            server = 'irc.chat.twitch.tv'
-            port = 6667
-            irc = socket.socket()
-            irc.connect((server, port))
-            irc.send(f'NICK justinfan12345\n'.encode('utf-8'))
-            irc.send(f'JOIN #{channel}\n'.encode('utf-8'))
-            return irc
+
 class vstats():
     
     def __init__(self, token, stime, workdir, channel):
@@ -28,10 +21,10 @@ class vstats():
         self.workdir = workdir
         self.channel = channel
         self.vad = SentimentIntensityAnalyzer()
-        self.irc = connect_to_twitch_chat(self.channel)
         self.fileq = Queue()
         self.arrayq = Queue()
-
+        self.irc = self.connect_to_twitch_chat()
+    
     def collect_data(self):
         categorylegend = []
         legendcount = 0
@@ -76,10 +69,11 @@ class vstats():
                     y_values.append(viewer)
 
                 elif checkstream.checkUser(self.channel, self.token) == False:
-                    print('pre exit waiting 15min')
-                    time.sleep(900)
+                    print('pre exit ploting waiting 15min')
+                    time.sleep(720)
+                    print('exit')
                     if checkstream.checkUser(self.channel, self.token) == False:
-                        print('exiting')
+                        print('exiting ploting')
                         break
                     else:
                         pass
@@ -96,7 +90,16 @@ class vstats():
         plt.close()
         self.fileq.put([filename, categorylegend])
         #os.remove(filename)
-        
+    
+    def connect_to_twitch_chat(self):
+            server = 'irc.chat.twitch.tv'
+            port = 6667
+            irc = socket.socket()
+            irc.settimeout(3)
+            irc.connect((server, port))
+            irc.send(f'NICK justinfan12345\n'.encode('utf-8'))
+            irc.send(f'JOIN #{self.channel}\n'.encode('utf-8'))
+            return irc
 
     def read_chat(self):
         buffer = ''
@@ -109,23 +112,29 @@ class vstats():
                     username = line.split('!')[0][1:]
                     message = ':'.join(line.split(':')[2:])
                     return username, message, time.time()
-        except:
+        except Exception as e:
             return None
     
     def collect_chat(self):
         bigbuarray = []
         c = 0
+        timeout = 0
         while True:
             message = self.read_chat()
             if message != None:
+                timeout = 0
                 bigbuarray.append(message)
-            if c == 50:
+            elif message == None:
+                timeout += 1
+                print(f'timeout: {timeout}')
+            if c == 50 or timeout >= 4:
                 if checkstream.checkUser(self.channel, self.token) == False:
-                    print('pre exit waiting 15min')
-                    time.sleep(900)
+                    print('pre exit chat waiting 15min')
+                    time.sleep(720)
                     if checkstream.checkUser(self.channel, self.token) == False:
-                        print('exiting')
+                        print('exiting chat')
                         self.arrayq.put(bigbuarray)
+                        break
                     else:
                         pass
             c += 1
@@ -135,12 +144,12 @@ class vstats():
 
     def start(self):
         cd = Process(target=self.collect_data)
-        cd.start()
         vs = Process(target=self.collect_chat)
+        cd.start()
         vs.start()
         cd.join()
         vs.join()
-        
+        print('done')
         f = self.fileq.get()
         a = self.arrayq.get()
         name_counts = {}
@@ -155,6 +164,7 @@ class vstats():
         sorted_name_counts = sorted(name_counts.items(), key=lambda x: x[1], reverse=True)[:5]
         
         table = tabulate(sorted_name_counts, headers=["User", "Messages"], tablefmt="simple")
+        print(table)
         tweet_pic(f[0], f"chart of viewercount over stream from: {self.channel}\r{''.join(f[1])}\rtop-chatter:\r{table}")
 
         
