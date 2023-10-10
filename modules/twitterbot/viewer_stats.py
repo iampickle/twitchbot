@@ -113,6 +113,7 @@ class vstats():
                     message = ':'.join(line.split(':')[2:])
                     return username, message, time.time()
         except Exception as e:
+            print(e)
             return None
     
     def collect_chat(self):
@@ -128,6 +129,7 @@ class vstats():
                 timeout += 1
                 print(f'timeout: {timeout}')
             if c == 50 or timeout >= 4:
+                self.irc = self.connect_to_twitch_chat()
                 if checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit chat waiting 15min')
                     time.sleep(720)
