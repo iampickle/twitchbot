@@ -107,9 +107,6 @@ class vstats():
             buffer += self.irc.recv(2048).decode('utf-8')
             if buffer == "PING :tmi.twitch.tv\r\n":
                 self.irc.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
-                print("---SENT PONG---")
-            else:
-                print(buffer)
             lines = buffer.split('\n')
             buffer = lines.pop()
             for line in lines:
@@ -118,7 +115,6 @@ class vstats():
                     message = ':'.join(line.split(':')[2:])
                     return username, message, time.time()
         except Exception as e:
-            print(e)
             return None
     
     def collect_chat(self):
@@ -132,12 +128,10 @@ class vstats():
                 bigbuarray.append(message)
             elif message == None:
                 timeout += 1
-                print(f'timeout: {timeout}')
             if timeout == 100:
                 time.sleep(5)
                 self.irc = self.connect_to_twitch_chat()
             if c == 10 or timeout >= 10:
-                print('looking')
                 c = 0
                 if checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit chat waiting 15min')
