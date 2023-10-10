@@ -53,7 +53,7 @@ class vstats():
                 try:
                     viewer = get_data('viewer_count')
                     now_title = get_data('game_name')
-                    if now_title != old_title:
+                    if now_title != old_title and now_title != None:
                         legendcount += 1
                         old_title = now_title
                         categorylegend.append(f'{str(legendcount)}: {now_title}\r')
@@ -70,7 +70,7 @@ class vstats():
 
                 elif checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit ploting waiting 15min')
-                    time.sleep(720)
+                    time.sleep(3)
                     print('exit')
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting ploting')
@@ -130,7 +130,7 @@ class vstats():
             if c == 50 or timeout >= 4:
                 if checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit chat waiting 15min')
-                    time.sleep(720)
+                    time.sleep(3)
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting chat')
                         self.arrayq.put(bigbuarray)
