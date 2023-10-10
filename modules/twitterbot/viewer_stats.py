@@ -95,7 +95,7 @@ class vstats():
             server = 'irc.chat.twitch.tv'
             port = 6667
             irc = socket.socket()
-            irc.settimeout(45)
+            irc.settimeout(3)
             irc.connect((server, port))
             irc.send(f'NICK justinfan12345\n'.encode('utf-8'))
             irc.send(f'JOIN #{self.channel}\n'.encode('utf-8'))
@@ -113,7 +113,6 @@ class vstats():
                     message = ':'.join(line.split(':')[2:])
                     return username, message, time.time()
         except Exception as e:
-            print(e)
             return None
     
     def collect_chat(self):
@@ -128,11 +127,15 @@ class vstats():
             elif message == None:
                 timeout += 1
                 print(f'timeout: {timeout}')
-            if c == 50 or timeout >= 4:
+            if timeout == 100:
+                time.sleep(5)
                 self.irc = self.connect_to_twitch_chat()
+            if c == 10 or timeout >= 10:
+                print('looking')
+                c = 0
                 if checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit chat waiting 15min')
-                    time.sleep(720)
+                    time.sleep(600)
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting chat')
                         self.arrayq.put(bigbuarray)
