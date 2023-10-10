@@ -7,7 +7,8 @@ import os
 import uuid
 import socket
 import time
-from tabulate import tabulate
+import plotly.figure_factory as ff
+import pandas as pd
 from multiprocessing import Process, Queue
 from modules.twitterbot.GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
 
@@ -141,8 +142,6 @@ class vstats():
                         self.irc.close()
                         self.arrayq.put(bigbuarray)
                         break
-                    else:
-                        pass
             c += 1
                     
 
@@ -155,23 +154,34 @@ class vstats():
         vs.start()
         cd.join()
         vs.join()
-        print('done')
         f = self.fileq.get()
         a = self.arrayq.get()
-        name_counts = {}
-
-        for item in a:
-            name = item[0]
-            if name in name_counts:
-                name_counts[name] += 1
-            else:
-                name_counts[name] = 1
-                
-        sorted_name_counts = sorted(name_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        print('done')
         
-        table = tabulate(sorted_name_counts, headers=["User", "Messages"], tablefmt="simple")
-        print(table)
-        tweet_pic(f[0], f"chart of viewercount over stream from: {self.channel}\r{''.join(f[1])}\rtop-chatter:\r{table}")
+        # Convert to a DataFrame and remove the Timestamp
+        df = pd.DataFrame(a, columns=['username', 'message', 'timestamp'])
+        df = df[['username', 'message']]  # Keep only 'username' and 'message'
+
+        # Count the number of messages per user
+        message_counts = df['username'].value_counts().reset_index()
+        message_counts.columns = ['username', 'messages']
+
+        # Keep only the top 10
+        top = message_counts.head(10)
+        fig = ff.create_table(top)
+        fig.update_layout(
+                        template="plotly_dark",  # Use Plotly's dark theme
+                        autosize=False,
+                        width=500,
+                        height=200,
+                        )
+
+        name = str(uuid.uuid4())+'.png'
+        filename = os.path.join(self.workdir, name)
+        print('ploting table')
+        fig.write_image(filename, scale=2)
+        
+        tweet_pics([f[0],filename], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")
 
         
         
