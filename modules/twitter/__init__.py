@@ -19,13 +19,17 @@ def tweet_text(text):
         except Exception as e:
             print('error while tweeting', e)
 
-def tweet_pic(path, text=""):
+def tweet_pics(paths, text=""):
     try:
-        resp = api.media_upload(path)
-        api2.create_tweet(text=text, media_ids=[resp.media_id_string])
-        print('tweeted picture!')
+        media_ids = []
+        for path in paths:
+            resp = api.media_upload(path)
+            media_ids.append(resp.media_id_string)
+        
+        api2.create_tweet(text=text, media_ids=media_ids)
+        print('Tweeted pictures!')
     except Exception as e:
-        print('error while tweeting', e)
+        print('Error while tweeting', e)
         
 def tweet_media(path, text=""):
     try:

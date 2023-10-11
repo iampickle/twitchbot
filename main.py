@@ -18,7 +18,7 @@ import modules.checkstream as checkstream
 import modules.dl_stream as dl_stream
 import modules.getauth as getauth
 import modules.notification as notification
-import modules.twitterbot.viewer_stats as viewer_stats
+from modules.twitterbot.viewer_stats import vstats
 import modules.weighting as weighting
 from modules.twitter import *
 
@@ -53,9 +53,10 @@ def sub1(channel, token):
     if channel in channelconf['streamers']:
         if 'tbot' in channelconf['streamers'][channel]:
             tweet_text(f'🔴 {channel} ist live!\nhttps://www.twitch.tv/{channel}\nTitel: {checkstream.get_title(channel, token)}\n#{channel}')
-            log.info('📈 start plot data collection')
+            log.info('📈 start plot and data collection')
+            vs = vstats(token, 60, workdir, channel)
             plotp = Process(
-                target=viewer_stats.collect_data, args=(token, 60, workdir, channel,))
+                target=vs.start)
             plotp.start()
 
     log.info("⬇️ starting download")
