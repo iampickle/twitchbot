@@ -7,6 +7,7 @@ import os
 import uuid
 import socket
 import time
+import sys
 import plotly.figure_factory as ff
 import pandas as pd
 from multiprocessing import Process, Queue
@@ -71,11 +72,11 @@ class vstats():
 
                 elif checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit ploting waiting 15min')
-                    time.sleep(720)
+                    time.sleep(10)
                     print('exit')
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting ploting')
-                        exit()
+                        break
                     else:
                         pass
 
@@ -123,6 +124,7 @@ class vstats():
         c = 0
         timeout = 0
         while True:
+            c += 1
             message = self.read_chat()
             if message != None:
                 timeout = 0
@@ -136,14 +138,12 @@ class vstats():
                 c = 0
                 if checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit chat waiting 15min')
-                    time.sleep(300)
+                    time.sleep(10)
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting chat')
                         self.irc.close()
                         self.arrayq.put(bigbuarray)
-                        exit()
-                        
-            c += 1
+                        break           
                     
 
 
