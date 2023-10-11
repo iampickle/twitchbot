@@ -52,7 +52,7 @@ def process_audio(model, filename, thread_num, num_threads, output_queue, proces
             if len(data) == 0:
                 #print('proc: ', thread_num, 'finished')
                 process_queue.put('finished')
-                exit()
+                break
             if rec.AcceptWaveform(data):
                 part_result = json.loads(rec.Result())
                 sentence = part_result['text']
