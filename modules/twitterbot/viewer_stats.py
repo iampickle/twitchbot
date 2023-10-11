@@ -52,6 +52,7 @@ class vstats():
         
         categorylegend.append(f'start: {old_title}\r')
         while True:
+                time.sleep(self.stime)
                 try:
                     viewer = get_data('viewer_count')
                     now_title = get_data('game_name')
@@ -72,7 +73,7 @@ class vstats():
 
                 elif checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit ploting waiting 15min')
-                    time.sleep(10)
+                    time.sleep(900)
                     print('exit')
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting ploting')
@@ -134,11 +135,11 @@ class vstats():
             if timeout == 100:
                 time.sleep(5)
                 self.irc = self.connect_to_twitch_chat()
-            if c == 10 or timeout >= 10:
+            if c == 150 or timeout >= 20:
                 c = 0
                 if checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit chat waiting 15min')
-                    time.sleep(10)
+                    time.sleep(900)
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting chat')
                         self.irc.close()
