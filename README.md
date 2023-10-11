@@ -2,6 +2,18 @@
 
 automatic twitchdownloader with optional twitter-bot function
 
+## Help with Repo
+
+⚠️ ****Pull Request Guidelines**** ⚠️
+
+Pull requests should be done on the **`development`** branch only.
+
+
+****Tasks:****
+
+* Implement new features and improve existing ones to be better and more reliable.
+* Restructure the program manly the twitterbot part(package it in the right way)
+
 ## Guide
 
 **requirements**

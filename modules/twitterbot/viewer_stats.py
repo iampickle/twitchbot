@@ -75,7 +75,7 @@ class vstats():
                     print('exit')
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting ploting')
-                        break
+                        exit()
                     else:
                         pass
 
@@ -136,12 +136,13 @@ class vstats():
                 c = 0
                 if checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit chat waiting 15min')
-                    time.sleep(600)
+                    time.sleep(300)
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting chat')
                         self.irc.close()
                         self.arrayq.put(bigbuarray)
-                        break
+                        exit()
+                        
             c += 1
                     
 
