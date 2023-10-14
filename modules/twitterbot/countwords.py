@@ -33,4 +33,4 @@ def countsaidwords(results, workdir, channel):
     plt.xlabel('Time in Minutes')
     plt.savefig(filename)
     plt.close()
-    tweet_pic(filename, f"chart of word count over stream from: {channel}") 
+    tweet_pics([filename], f"chart of word count over stream from: {channel}") 
