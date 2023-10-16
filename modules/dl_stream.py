@@ -220,9 +220,10 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
             subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', 'libx264', '-crf', '21', '-preset', 'faster', '-c:a', 'copy', workdir+fn + ".mp4"])
             log.info("🧰 file compressed")
             
-    if cs == True:    
+    if cs == True:
+            pass
+    else:
         try:
-            os.remove(workdir+lt2)
             os.remove(workdir+lt1)
             log.info("🗑️ deleted temp files!")
         except Exception as e:

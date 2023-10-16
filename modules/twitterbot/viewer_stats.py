@@ -19,12 +19,15 @@ class vstats():
         
         self.token = token
         self.stime = stime
-        self.workdir = workdir
         self.channel = channel
         self.vad = SentimentIntensityAnalyzer()
         self.fileq = Queue()
         self.arrayq = Queue()
         
+        self.workdir = os.path.join(workdir, 'analytics/')
+        if not os.path.exists(self.workdir):
+             os.makedirs(self.workdir)
+             
         self.start()
     
     def collect_data(self):
