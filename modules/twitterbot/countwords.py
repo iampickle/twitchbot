@@ -1,13 +1,13 @@
 from ..twitter import *
-
+import json
+import numpy as np
+from datetime import timedelta
+import uuid
+import os
+import matplotlib.pyplot as plt
 
 def countsaidwords(results, workdir, channel):
-    import json
-    import numpy as np
-    from datetime import timedelta
-    import uuid
-    import os
-    import matplotlib.pyplot as plt
+    workdir = os.path.join(workdir, 'analytics/')
 
     name = str(uuid.uuid4())+'.png'
     filename = os.path.join(workdir, name)
@@ -33,4 +33,4 @@ def countsaidwords(results, workdir, channel):
     plt.xlabel('Time in Minutes')
     plt.savefig(filename)
     plt.close()
-    tweet_pic(filename, f"chart of word count over stream from: {channel}") 
+    tweet_pics([filename], f"chart of word count over stream from: {channel}") 
