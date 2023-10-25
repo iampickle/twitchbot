@@ -12,6 +12,7 @@ from .notification import notification
 from .countwords import countsaidwords
 from .percentofmood import moodpercent
 from ..twitter import *
+from .db import *
 
 listname = os.environ.get("channel-config")
 channelconfraw = open(listname, "r")
@@ -190,27 +191,39 @@ class trimming:
 
 class sentimenttweet:
 
-    def __init__(self, channel, aresults, workdir):
+    def __init__(self, channel, aresults, workdir, dbid=''):
         self.channel = channel
         self.aresults = aresults
         self.workdir = workdir
+        self.dbid = dbid
         
     def tweetsentiment(self):
         
-        moodpercent(self.aresults, self.channel)
-
-        countsaidwords(self.aresults, self.workdir, self.channel)
+        if self.aresults == [] and os.environ.get('db-host') != None:
+            print('no resilts to process')
+            db = database()
+            db.dump_array_via_id(self.dbid, 'emotions', [])
+        elif self.aresults == []:
+            print('no resilts to process')
+        else:
+            if self.dbid != '':
+                moodpercent(self.aresults, self.channel, dbid=self.dbid)
+            else:
+                moodpercent(self.aresults, self.channel)
+                
+            countsaidwords(self.aresults, self.workdir, self.channel)
         
         
 
 
 class init:
-    def __init__(self, path, word, sp=5, ep=3, channel='', test=False):
+    def __init__(self, path, word, sp=5, ep=3, channel='', test=False, dbid=None):
         patharray = path.split('/')
         self.workdir = "/".join(patharray[:-1])
         self.vfile = patharray[-1:][0]
         self.word = word
         self.channel = channel
+        self.dbid = dbid
         try:
             if channelconf['streamers'][channel]['tbot']['start'] and channelconf['streamers'][channel]['tbot']['end']:
                 self.sp = channelconf['streamers'][channel]['tbot']['start']
@@ -238,14 +251,37 @@ class init:
             else:
                 aresults = wp.analyse()
                 sleep(10)
+                
+        if self.test == False and self.dbid != None:
+            print('uploading word to db')
+            dbres = []
+            for line in aresults:
+                    try:
+                        try:
+                            line = str(line.rstrip())
+                        except:
+                            pass
+                        line = line.replace("\"", ",")
+                        line = line.replace("\'", "\"")
+                        line = json.loads(line)
+                        if len(line) == 0 or len(line) == 1:
+                            pass
+                        else:
+                            dbres.append([line['start'], line['end'], line['word'], line['conf']])
+                    except:
+                        pass
+            db = database()
+            db.dump_array_via_id(self.dbid, 'words', dbres)
+            db.cd()
             
         if self.test == 0 or 1 or 4:
+            print('trimming and word analytics')
             # trimming and concating video also uplad to twitter
             tr = trimming(aresults, self.workdir, self.vfile, self.word, self.channel, self.sp, self.ep)
             tr.trim_on_word()
 
             # tweet sentiment analyses
-            st = sentimenttweet(self.channel, aresults, self.workdir)
+            st = sentimenttweet(self.channel, aresults, self.workdir, dbid=self.dbid)
             st.tweetsentiment()
 
         if self.test == 0:

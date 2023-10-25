@@ -2,13 +2,12 @@ from __future__ import unicode_literals
 from xml.etree.ElementInclude import include
 from dotenv import load_dotenv
 load_dotenv()
-import datetime
+from datetime import datetime
 import os
 import subprocess
 import sys
 import time
 import json
-from datetime import date
 from multiprocessing import Process
 import subprocess
 
@@ -21,6 +20,7 @@ import modules.notification as notification
 from modules.twitterbot.viewer_stats import vstats as vs
 import modules.weighting as weighting
 from modules.twitter import *
+from modules.twitterbot.db import *
 
 #logsetup
 logbook.StreamHandler(sys.stdout).push_application()
@@ -28,7 +28,6 @@ log = logbook.Logger('main')
 logbook.set_datetime_format("local")
 
 #setup env vars and stuff
-now = datetime.datetime.now()
 listname = os.environ.get("channel-config")
 channelconfraw = open(listname, "r")
 channelconf = json.load(channelconfraw)
@@ -37,8 +36,8 @@ dir = os.environ.get("dir")
 #folder routine2
 def sub1(channel, token):
     workdir = dir+'/'+channel
-    today = date.today()
-    folder = channel + "-stream-" + str(today)
+    today = datetime.today()
+    folder = channel + "-stream-" + str(today.strftime("%Y-%m-%d"))
 
     if os.path.isdir(workdir+'/'+folder) == False:
         os.mkdir(workdir+'/'+folder)
@@ -52,14 +51,18 @@ def sub1(channel, token):
 
     if channel in channelconf['streamers']:
         if 'tbot' in channelconf['streamers'][channel]:
+            db = database()
+            dbid = db.create_frame(channel, now.strftime('%Y-%m-%d %H:%M:%S'))
+            db.cd()
+            log.info(f'📑 writing to db as {channel} id is = {dbid}')
             tweet_text(f'🔴 {channel} ist live!\nhttps://www.twitch.tv/{channel}\nTitel: {checkstream.get_title(channel, token)}\n#{channel}')
             log.info('📈 start plot and data collection')
-            plotp = Process(target=vs, args=(token, 60, workdir, channel,))
+            plotp = Process(target=vs, args=(token, 300, workdir, channel, dbid))
             plotp.start()
 
     log.info("⬇️ starting download")
     filename = now.strftime("%H.%M")
-    dl_stream.dlstream(channel, filename, workdir, token, today)
+    dl_stream.dlstream(channel, filename, workdir, token, today, dbid)
 
 #folder routine1
 def check_main_folder(channel):
@@ -78,6 +81,8 @@ def starup(channel):
     wait = 0
     
     while True:
+        global now
+        now = datetime.now()
         log = logbook.Logger(channel)
         #check if token is to old
 

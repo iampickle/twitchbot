@@ -8,7 +8,6 @@ automatic twitchdownloader with optional twitter-bot function
 
 Pull requests should be done on the **`development`** branch only.
 
-
 ****Tasks:****
 
 * Implement new features and improve existing ones to be better and more reliable.
@@ -70,6 +69,12 @@ Pull requests should be done on the **`development`** branch only.
    dir=</your/path>
    channel-config=<./channels.json>
 
+   #db
+   db-host=<url/ip to database>
+   db-user=<username>
+   db-password=<password>
+   db-database=<database name>
+
    #vosk
    vosk-model=<vosk-model-small-de-zamia-0.3>
 
@@ -92,19 +97,22 @@ Pull requests should be done on the **`development`** branch only.
    example: /your/folder/...
 
    ```tree
-    .
+   .
     └── mainfolder/ 
-   	├── streamer1/ 
-   	│ 	└── steamer1-date/ 
-   	│ 	└── stream.mp4 
-   	├── streamer2/
-   	│	└── steamer2-date/ 
-   	│		├── 2b762e54-a315-495c-bd62-f65ee4f5390e.png(viewer chart) 
-   	│		├── output/
-   	│               │     └── stitched.mp4 
-   	│ 		└── stream.mp4 
-   	└── .yt-credentials/ 
-   		└── client_secret.json
+       ├── streamer1/ 
+       │   └── steamer1-date/ 
+       │       └── stream.mp4 
+       ├── streamer2/
+       │   └── steamer2-date/ 
+       │       ├── analytics/
+       │       │   ├── 2b762e54-a315-495c-bd62-f65ee4f5390e.png(viewer chart)
+       │       │   ├── 2b762e54-a315-495c-bd62-f65ee4f5390e.png(word count)
+       │       │   └── 2b762e54-a315-495c-bd62-f65ee4f5390e.png(top table)
+       │       ├── output/
+       │       │   └── stitched.mp4 
+       │       └── stream.mp4 
+       └── .yt-credentials/ 
+           └── client_secret.json
    ```
 7. .yt-credentials/
    client_secret.json([tutorial](https://developers.google.com/youtube/v3/guides/authentication?hl=de))

@@ -60,7 +60,7 @@ def dek(workdir, tempfilename, channel, log, token, pausetime=720):
         
 
 
-def dlstream(channel, filename, workdir, token, ndate):
+def dlstream(channel, filename, workdir, token, ndate, dbid):
     log = Logger(channel)
     #os.chdir(folder)
     url = 'https://www.twitch.tv/' + channel
@@ -158,7 +158,7 @@ def dlstream(channel, filename, workdir, token, ndate):
             #wait for os to unlock file for futher use
             time.sleep(20)
             
-            tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(channel)]['tbot']['words'], channel=channel)
+            tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(channel)]['tbot']['words'], channel=channel, dbid=dbid)
             tbs.start()            
         if 'ytupload' in channelconf['streamers'][channel]:
             if channelconf['streamers'][channel]['ytupload'] == True:
