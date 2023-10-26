@@ -2,6 +2,8 @@ from aiohttp import client
 import requests
 from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
+load_dotenv()
 from logbook import Logger, StreamHandler
 
 client_id=os.environ.get("Client-ID-Twitch")
@@ -28,12 +30,12 @@ def checkUser(userName, token): #returns true if online, false if not
         if len(jsondata['data']) == 1:
             return True
 
-        else:
+        elif len(jsondata['data']) == 0:
             return False
             
     except Exception as e:
         log.error("⁉️ Error checking user: ", e)
-        return False
+        return jsondata
 
 def get_title(userName, token):
     log = Logger(userName)
