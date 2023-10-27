@@ -13,6 +13,8 @@ import pandas as pd
 from multiprocessing import Process, Queue
 from modules.twitterbot.GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
 from modules.twitterbot.db import *
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class vstats():
@@ -93,11 +95,11 @@ class vstats():
                     break
                 else:
                     pass
-        
-        db = database()
-        db.dump_array_via_id(self.dbid, 'viewotime', dbarray) 
-        db.cd()
-        
+        if os.environ.get("db-host"):
+            db = database()
+            db.dump_array_via_id(self.dbid, 'viewotime', dbarray) 
+            db.cd()
+            
         print('ploting')
         plt.style.use('dark_background')
         plt.vlines(x = change_title, ymin = 0, ymax = max(y_values), color='purple', label='category change')
@@ -173,11 +175,12 @@ class vstats():
                             break           
             except Exception as e:
                 print(f'main error: {e}')
-                
-        #write to db
-        db = database()
-        db.dump_array_via_id(int(self.dbid), 'topchatter', bigbuarray)
-        db.cd()
+        
+        if os.environ.get("db-host"):    
+            #write to db
+            db = database()
+            db.dump_array_via_id(int(self.dbid), 'topchatter', bigbuarray)
+            db.cd()
         
         # Convert to a DataFrame and remove the Timestamp
         df = pd.DataFrame(bigbuarray, columns=['username', 'message', 'timestamp'])

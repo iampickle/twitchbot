@@ -51,9 +51,10 @@ def sub1(channel, token):
 
     if channel in channelconf['streamers']:
         if 'tbot' in channelconf['streamers'][channel]:
-            db = database()
-            dbid = db.create_frame(channel, now.strftime('%Y-%m-%d %H:%M:%S'))
-            db.cd()
+            if os.environ.get("db-host"):
+                db = database()
+                dbid = db.create_frame(channel, now.strftime('%Y-%m-%d %H:%M:%S'))
+                db.cd()
             log.info(f'📑 writing to db as {channel} id is = {dbid}')
             tweet_text(f'🔴 {channel} ist live!\nhttps://www.twitch.tv/{channel}\nTitel: {checkstream.get_title(channel, token)}\n#{channel}')
             log.info('📈 start plot and data collection')

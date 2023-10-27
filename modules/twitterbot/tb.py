@@ -199,12 +199,11 @@ class sentimenttweet:
         
     def tweetsentiment(self):
         
-        if self.aresults == [] and os.environ.get('db-host') != None:
+        if self.aresults == []:
             print('no resilts to process')
-            db = database()
-            db.dump_array_via_id(self.dbid, 'emotions', [])
-        elif self.aresults == []:
-            print('no resilts to process')
+            if os.environ.get("db-host"):
+                db = database()
+                db.dump_array_via_id(self.dbid, 'emotions', [])
         else:
             if self.dbid != '':
                 moodpercent(self.aresults, self.channel, dbid=self.dbid)
