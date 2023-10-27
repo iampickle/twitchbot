@@ -70,7 +70,7 @@ class vstats():
                     categorylegend.append(f'{str(legendcount)}: {now_title}\r')
                     print(now_title)
                     chname = now_title
-                    change_title.append(datetime.now())
+                    change_title.append(datetime.datetime.now())
             except:
                 break
             
@@ -81,9 +81,9 @@ class vstats():
                 y_values.append(viewer)
                 
                 if chname != None:
-                    dbarray.append([data, viewer, chname])
+                    dbarray.append([time.time(), data, viewer, chname])
                 else:
-                    dbarray.append([data, viewer])
+                    dbarray.append([time.time(), data, viewer])
 
             elif checkstream.checkUser(self.channel, self.token) == False:
                 print('pre exit ploting waiting 15min')
