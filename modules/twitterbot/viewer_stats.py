@@ -7,19 +7,24 @@ import os
 import uuid
 import socket
 import time
+import json
 import plotly.figure_factory as ff
 import pandas as pd
 from multiprocessing import Process, Queue
 from modules.twitterbot.GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
+from modules.twitterbot.db import *
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class vstats():
     
-    def __init__(self, token, stime, workdir, channel):
+    def __init__(self, token, stime, workdir, channel, dbid):
         
         self.token = token
         self.stime = stime
         self.channel = channel
+        self.dbid = dbid
         self.vad = SentimentIntensityAnalyzer()
         self.fileq = Queue()
         self.arrayq = Queue()
@@ -51,39 +56,50 @@ class vstats():
         x_values = []
         y_values = []
         change_title = []
+        dbarray = []
         old_title = get_data('game_name')
         
         categorylegend.append(f'start: {old_title}\r')
         while True:
-                time.sleep(self.stime)
-                try:
-                    viewer = get_data('viewer_count')
-                    now_title = get_data('game_name')
-                    if now_title != old_title and now_title != None:
-                        legendcount += 1
-                        old_title = now_title
-                        categorylegend.append(f'{str(legendcount)}: {now_title}\r')
-                        print(now_title)
-                        change_title.append(datetime.datetime.now())
-                except:
-                    break
+            chname = None
+            time.sleep(self.stime)
+            try:
+                viewer = get_data('viewer_count')
+                now_title = get_data('game_name')
+                if now_title != old_title and now_title != None:
+                    legendcount += 1
+                    old_title = now_title
+                    categorylegend.append(f'{str(legendcount)}: {now_title}\r')
+                    print(now_title)
+                    chname = now_title
+                    change_title.append(datetime.datetime.now())
+            except:
+                break
+            
+            if checkstream.checkUser(self.channel, self.token) == True:
+                data = datetime.datetime.now()
+                x_values.append(data)
+
+                y_values.append(viewer)
                 
-                if checkstream.checkUser(self.channel, self.token) == True:
-                    data = datetime.datetime.now()
-                    x_values.append(data)
+                if chname != None:
+                    dbarray.append([time.time(), data, viewer, chname])
+                else:
+                    dbarray.append([time.time(), data, viewer])
 
-                    y_values.append(viewer)
-
-                elif checkstream.checkUser(self.channel, self.token) == False:
-                    print('pre exit ploting waiting 15min')
-                    time.sleep(900)
-                    print('exit')
-                    if checkstream.checkUser(self.channel, self.token) == False:
-                        print('exiting ploting')
-                        break
-                    else:
-                        pass
-
+            elif checkstream.checkUser(self.channel, self.token) == False:
+                print('pre exit ploting waiting 15min')
+                time.sleep(900)
+                if checkstream.checkUser(self.channel, self.token) == False:
+                    print('exiting ploting')
+                    break
+                else:
+                    pass
+        if os.environ.get("db-host"):
+            db = database()
+            db.dump_array_via_id(self.dbid, 'viewotime', dbarray) 
+            db.cd()
+            
         print('ploting')
         plt.style.use('dark_background')
         plt.vlines(x = change_title, ymin = 0, ymax = max(y_values), color='purple', label='category change')
@@ -159,7 +175,13 @@ class vstats():
                             break           
             except Exception as e:
                 print(f'main error: {e}')
-                
+        
+        if os.environ.get("db-host"):    
+            #write to db
+            db = database()
+            db.dump_array_via_id(int(self.dbid), 'topchatter', bigbuarray)
+            db.cd()
+        
         # Convert to a DataFrame and remove the Timestamp
         df = pd.DataFrame(bigbuarray, columns=['username', 'message', 'timestamp'])
         df = df[['username', 'message']]  # Keep only 'username' and 'message'

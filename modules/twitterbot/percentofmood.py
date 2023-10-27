@@ -2,10 +2,13 @@ import os
 import json
 from ..twitter import *
 from .GerVADER.vaderSentimentGER import SentimentIntensityAnalyzer
+from .db import *
+from dotenv import load_dotenv
+load_dotenv()
 
 vaderanalyzer = SentimentIntensityAnalyzer()
 
-def moodpercent(results, channel):
+def moodpercent(results, channel, dbid=''):
     allwords = []
     #ofile = os.path.join(workdir, 'output.txt')
     #with open(str(ofile), 'r') as fr:
@@ -27,6 +30,12 @@ def moodpercent(results, channel):
     all_neg = round(vs['neg'] * 100, 3)
     all_pos = round(vs['pos'] * 100, 3)
     all_neu = round(vs['neu'] * 100, 3)
+
+    if os.environ.get("db-host"):
+        if dbid != '':
+            db = database()
+            db.dump_array_via_id(dbid, 'emotions', [all_neg, all_pos, all_neu]) 
+            db.cd()
 
 
     text = '#'+channel+' Die Stimmung im Stream war,\nzu '+str(all_neg)+'% neagtiv😡,'+'\nzu '+str(all_pos)+'% positiv😊,'+'\nund zu '+str(all_neu)+'% neutral😐'
