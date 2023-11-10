@@ -58,12 +58,12 @@ def sub1(channel, token):
             log.info(f'📑 writing to db as {channel} id is = {dbid}')
             tweet_text(f'🔴 {channel} ist live!\nhttps://www.twitch.tv/{channel}\nTitel: {checkstream.get_title(channel, token)}\n#{channel}')
             log.info('📈 start plot and data collection')
-            plotp = Process(target=vs, args=(token, 300, workdir, channel, dbid))
+            plotp = Process(target=vs, args=(token, 900, workdir, channel, dbid))
             plotp.start()
 
     log.info("⬇️ starting download")
     filename = now.strftime("%H.%M")
-    dl_stream.dlstream(channel, filename, workdir, token, today, dbid)
+    dl_stream.dlstream(channel, filename, workdir, token, today)
 
 #folder routine1
 def check_main_folder(channel):

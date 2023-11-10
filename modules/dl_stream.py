@@ -60,7 +60,7 @@ def dek(workdir, tempfilename, channel, log, token, pausetime=720):
         
 
 
-def dlstream(channel, filename, workdir, token, ndate, dbid):
+def dlstream(channel, filename, workdir, token, ndate, dbid=None):
     log = Logger(channel)
     #os.chdir(folder)
     url = 'https://www.twitch.tv/' + channel
@@ -185,7 +185,7 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
         if cs == True:
             job(channel, ndate, lt1, fn)
         else:
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', 'libx264', '-crf', '18', '-preset', 'slow', '-c:a', 'copy', workdir+fn + ".mp4"])
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', 'libx264', '-crf', '16', '-preset', 'slow', '-c:a', 'copy', workdir+fn + ".mp4"])
         log.info("🧰 file compressed")
         
     elif choosen == 1:
@@ -204,8 +204,8 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
                     ytupload.upload(vid[0], vid[1], str(udate)+'/'+str(n), channel)
                     ydir = os.path.join(workdir, "ytsplits")
                     os.rmdir(ydir)
-                for vid in vlist:
-                    os.remove(vid)
+                """ for vid in vlist:
+                    os.remove(vid) """
             except Exception as e:
                 print(e)
                 log.info("⬆️ youtube upload failed")
