@@ -23,7 +23,7 @@ load_dotenv()
 
 class vstats():
     
-    def __init__(self, token, stime, workdir, channel, dbid):
+    def __init__(self, token, stime, workdir, channel, dbid=None, test=None):
         
         self.client_id = os.environ.get("Client-ID-Twitch")
         self.token = token
@@ -33,12 +33,13 @@ class vstats():
         self.vad = SentimentIntensityAnalyzer()
         self.fileq = Queue()
         self.arrayq = Queue()
+        self.test = test
         
         self.workdir = os.path.join(workdir, 'analytics/')
         if not os.path.exists(self.workdir):
              os.makedirs(self.workdir)
-             
-        self.start()
+        if test == None:
+            self.start()
     
     def collect_data(self):
         categorylegend = []
@@ -54,10 +55,10 @@ class vstats():
             url = f'https://api.twitch.tv/helix/games?id={game_id}'
             response = requests.get(url, headers=API_HEADERS)
             data = response.json()
-            
+
             if 'data' in data and len(data['data']) > 0:
                 game_info = data['data'][0]
-                category_picture_url = game_info['box_art_url'].replace('{width}x{height}', '1140x1520')
+                category_picture_url = game_info['box_art_url'].replace('{width}x{height}', '1520x2048')
             else:
                 return None
 
@@ -65,16 +66,11 @@ class vstats():
 
             if response.status_code == 200:
                 img = Image.open(BytesIO(response.content))
+                return img
             else:
                 print(f"Error fetching image for category '{game_id}'. Status code: {response.status_code}")
                 return None
-            
-            img_width, img_height = img.size
-            fixed_width = 25
-            new_width = fixed_width
-            new_height = int(img_height * (fixed_width / img_width))
-            img = img.resize((new_width, new_height))
-            return img
+
 
         # Function to retrieve data from Twitch API
         def get_data(type=None):
@@ -94,15 +90,23 @@ class vstats():
         y_values = []
         change_title = []
         dbarray = []
+        gns = []
         old_title = get_data('game_id')
+        if self.test != None:
+            exittime = time.time() + self.test
 
         x_values.append(datetime.datetime.now())
         y_values.append(get_data('viewer_count'))
         categorylegend.append(f'start: {old_title}\r')
-        change_title.append([datetime.datetime.now(), old_title])
+        change_title.append([datetime.datetime.now(), get_data('game_id')])
+        gns.append(get_data('game_name'))
         print('starting loop')
 
+       
         while True:
+            if self.test != None and exittime <= time.time():
+                break
+            
             try:
                 chname = None
                 time.sleep(self.stime)
@@ -110,14 +114,15 @@ class vstats():
                 try:
                     viewer = get_data('viewer_count')
                     now_title = get_data('game_id')
-                    gn = get_data('game_name')
-                    
+                    gn = get_data('game_name')  # Added to retrieve the game name
+                            
                     if now_title != old_title and now_title != None:
                         legendcount += 1
                         old_title = now_title
-                        categorylegend.append(f'{str(legendcount)}: {gn}\r')
+                        categorylegend.append(f'{str(legendcount)}: {gn}\r')  # Include game name in the legend
                         chname = now_title
                         change_title.append([datetime.datetime.now(), now_title])
+                        gns.append(gn)
                 except:
                     break
 
@@ -149,7 +154,6 @@ class vstats():
         
         # Generate random vertical lines
         image_paths = [x[1] for x in change_title]
-
         # Generate random data for the graph
 
         # Plot the graph and add indicators
@@ -160,18 +164,32 @@ class vstats():
         xs = [x[0] for x in change_title]
         xs = np.asarray(xs)
         ax.vlines(xs, 0, ax.get_ylim()[1], color='purple', lw=2, alpha=0.7)
-        scaled_images = [load_and_resize_image(path) for path in image_paths]
 
-        for i, (x, img) in enumerate(zip(xs, scaled_images)):
-            ab = AnnotationBbox(OffsetImage(img), (x, 1), frameon=False)
-            ax.add_artist(ab)
+        scaled_images_info = [load_and_resize_image(path) for path in image_paths]
+
+        scalingfactor = 0.03
+        for (x, img, gn) in zip(xs, scaled_images_info, gns):
+            try:
+                img_width, img_height = img.size
+                scaled_width = int(img_width * scalingfactor)
+                scaled_height = int(img_height * scalingfactor)
+                imge = img.resize((scaled_width, scaled_height))
+                ab = AnnotationBbox(OffsetImage(imge), (x, 1), frameon=False)
+                ax.add_artist(ab)
+
+                # Add text below the image containing the game name
+                #bbox_props = dict(boxstyle="square", facecolor="white", edgecolor="black", linewidth=2)  # Specify bounding box properties
+                ax.text(x, -scaled_height*2.4, f'{gn}', ha='center', va='top', color='white', fontsize=5,)
+            except Exception as e:
+                print(f"Error adding AnnotationBbox: {e}")
 
         ax.legend()
 
         # Show the plot
-        plt.savefig(filename)
+        plt.savefig(filename, dpi=300)
         plt.close()
         self.fileq.put([filename, categorylegend])
+        return filename
         #os.remove(filename)
     
     def connect_to_twitch_chat(self):
