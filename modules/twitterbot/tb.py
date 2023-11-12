@@ -6,12 +6,14 @@ from datetime import timedelta
 from time import sleep
 from moviepy.editor import *
 from vosk import SetLogLevel
+import re
 
 from .mulitthread_vosk import startanalysing
 from .notification import notification
 from .countwords import countsaidwords
 from .percentofmood import moodpercent
 from ..twitter import *
+from ..tiktok.upload import tiktok_upload
 from .db import *
 
 listname = os.environ.get("channel-config")
@@ -223,6 +225,12 @@ class init:
         self.word = word
         self.channel = channel
         self.dbid = dbid
+        match = re.search(r'\d{4}-\d{2}-\d{2}', path)
+        if match:
+            self.date = match.group()
+        else:
+            print('no match for date in path string!')
+            self.date = None
         try:
             if channelconf['streamers'][channel]['tbot']['start'] and channelconf['streamers'][channel]['tbot']['end']:
                 self.sp = channelconf['streamers'][channel]['tbot']['start']
@@ -282,6 +290,9 @@ class init:
             # tweet sentiment analyses
             st = sentimenttweet(self.channel, aresults, self.workdir, dbid=self.dbid)
             st.tweetsentiment()
+            
+        if self.test == 0 and self.date != None:
+            tiktok_upload(self.channel, self.date, os.path.join(self.workdir, 'output/', 'stitched-video.mp4'))
 
         if self.test == 0:
             try:
