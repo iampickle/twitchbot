@@ -9,6 +9,7 @@ import glob
 from logbook import Logger
 from moviepy.editor import *
 import json
+import shutil
 
 import modules.twitterbot.youtube_upload as ytupload
 from modules.notification import notification
@@ -162,7 +163,7 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
             tbs.start()
         if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
             log.info('NOKEEP on deleting all files!')
-            os.rmdir(workdir)
+            shutil.rmtree(workdir)
         elif 'ytupload' in channelconf['streamers'][channel]:
             if channelconf['streamers'][channel]['ytupload'] == True:
                 p = Process(target=fixm, args=(workdir, tempfilename5, tempfilename2, filename, log, 1, channel, ndate, udate,))
