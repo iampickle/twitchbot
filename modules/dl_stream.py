@@ -159,8 +159,11 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
             log.info("🐦 starting twitter_bot")
             noti.message("start twitterbot")
             tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(channel)]['tbot']['words'], channel=channel, dbid=dbid)
-            tbs.start()            
-        if 'ytupload' in channelconf['streamers'][channel]:
+            tbs.start()
+        if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
+            log.info('NOKEEP on deleting all files!')
+            os.rmdir(workdir)
+        elif 'ytupload' in channelconf['streamers'][channel]:
             if channelconf['streamers'][channel]['ytupload'] == True:
                 p = Process(target=fixm, args=(workdir, tempfilename5, tempfilename2, filename, log, 1, channel, ndate, udate,))
                 p.start()
