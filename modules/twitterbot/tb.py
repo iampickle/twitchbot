@@ -127,7 +127,7 @@ class trimming:
 
         print("stitching")
         
-        if self.addition !=:
+        if self.addition != None:
             filename = f'{self.addition}stitched-video.mp4'
         else:
             filename = 'stitched-video.mp4'
