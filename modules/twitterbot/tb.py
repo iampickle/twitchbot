@@ -301,7 +301,7 @@ class init:
             st = sentimenttweet(self.channel, aresults, self.workdir, dbid=self.dbid)
             st.tweetsentiment()
             
-        if self.test == 0 and self.date != None:
+        if self.test == 0 and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
             tr.twitter_upload()
             tiktok_upload(self.channel, self.date, os.path.join(self.workdir, 'output/', 'stitched-video.mp4'))
 
