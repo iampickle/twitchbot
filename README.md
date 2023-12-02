@@ -39,7 +39,7 @@ Pull requests should be done on the **`development`** branch only.
    -example-
 
    ```json
-   {
+    {
      "compress-server": {
        "ip": "192.168.188.12",
        "port": "8766"
@@ -53,7 +53,9 @@ Pull requests should be done on the **`development`** branch only.
            "words": [ //if tbot obect exists also word-arry must be there
              "geil",
              "perfekt"
-           ]
+           ],
+           "tiktokupload": true, //toggel tiktok upload cookies file need to be set in .env (https://github.com/wkaisertexas/tiktok-uploader#-authentication)
+           "NOKEEP": true // if True folder of stream is deleted after Twitter-Bot is done
          }
        },
        "rezo": {} //channel without tbot object simply just record streams
@@ -68,6 +70,9 @@ Pull requests should be done on the **`development`** branch only.
    conda-path=/home/<user>/miniconda3/bin/activate # <= very important
    dir=</your/path>
    channel-config=<./channels.json>
+
+   #rendering options e.g. "libx264"
+   codec=<codec>
 
    #db
    db-host=<url/ip to database>
