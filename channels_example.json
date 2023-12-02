@@ -9,7 +9,8 @@
           "gott",
           "geil"
         ],
-        "tiktokupload": true
+        "tiktokupload": true,
+        "NOKEEP": true 
       }
     }
   }
