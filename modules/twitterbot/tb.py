@@ -6,12 +6,14 @@ from datetime import timedelta
 from time import sleep
 from moviepy.editor import *
 from vosk import SetLogLevel
+import re
 
 from .mulitthread_vosk import startanalysing
 from .notification import notification
 from .countwords import countsaidwords
 from .percentofmood import moodpercent
 from ..twitter import *
+from ..tiktok.upload import tiktok_upload
 from .db import *
 
 listname = os.environ.get("channel-config")
@@ -49,7 +51,7 @@ class wordprep:
 class trimming:
     noti = notification()
 
-    def __init__(self, results, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5):
+    def __init__(self, results, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5, addittion = None):
         self.workdir = workdir
         self.vfile = vfile
         self.word = word
@@ -60,6 +62,7 @@ class trimming:
         self.editlist = []
         self.uploadlist = []
         self.jsonwordlist = []
+        self.addition = addittion
 
     def timeconv(self, intime):
         return str(timedelta(seconds=intime))[:-4]
@@ -123,15 +126,21 @@ class trimming:
                 pass
 
         print("stitching")
-
+        
+        if self.addition != None:
+            filename = f'{self.addition}stitched-video.mp4'
+        else:
+            filename = 'stitched-video.mp4'
+        
         final_clip = concatenate_videoclips(self.editlist)
         # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
-        final_clip.write_videofile(os.path.join(self.workdir, 'output/', 'stitched-video.mp4'), fps=30,
+        final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30,
                                    temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None)
         vvar.close()
         """ subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', os.path.join(self.workdir,'output/','stitched-video-nonf.mp4'), '-c', 'copy', os.path.join(self.workdir,'output/','stitched-video.mp4'), '-y'])
         os.remove(os.path.join(self.workdir,'output/','stitched-video-nonf.mp4')) """
 
+    def twitter_upload(self):
         sleep(20)
 
         clip = VideoFileClip(os.path.join(
@@ -216,13 +225,20 @@ class sentimenttweet:
 
 
 class init:
-    def __init__(self, path, word, sp=5, ep=3, channel='', test=False, dbid=None):
+    def __init__(self, path, word, sp=5, ep=3, channel='', test=False, dbid=None, addittion=None):
         patharray = path.split('/')
         self.workdir = "/".join(patharray[:-1])
         self.vfile = patharray[-1:][0]
         self.word = word
         self.channel = channel
         self.dbid = dbid
+        self.addittion=addittion
+        match = re.search(r'\d{4}-\d{2}-\d{2}', path)
+        if match:
+            self.date = match.group()
+        else:
+            print('no match for date in path string!')
+            self.date = None
         try:
             if channelconf['streamers'][channel]['tbot']['start'] and channelconf['streamers'][channel]['tbot']['end']:
                 self.sp = channelconf['streamers'][channel]['tbot']['start']
@@ -238,7 +254,7 @@ class init:
         """cv = combinevids(self.workdir)
         """
         # start wordpre
-        if self.test == 0 or 3 or 4:
+        if self.test == 0 or 3 or 4 or 5:
             wp = wordprep(self.workdir, self.vfile)
             if os.path.isfile(os.path.join(self.workdir, 'output.txt')) == True:
                 print('skipping analyse output.txt exists!')
@@ -249,6 +265,7 @@ class init:
                         aresults.append(line)
             else:
                 aresults = wp.analyse()
+
                 sleep(10)
                 
         if self.test == False and self.dbid != None:
@@ -273,15 +290,20 @@ class init:
             db.dump_array_via_id(self.dbid, 'words', dbres)
             db.cd()
             
-        if self.test == 0 or 1 or 4:
+        if self.test == 0 or 1 or 4 or 5:
             print('trimming and word analytics')
             # trimming and concating video also uplad to twitter
-            tr = trimming(aresults, self.workdir, self.vfile, self.word, self.channel, self.sp, self.ep)
+            tr = trimming(aresults, self.workdir, self.vfile, self.word, self.channel, self.sp, self.ep, self.addittion)
             tr.trim_on_word()
-
+            
+        if self.test == 0:
             # tweet sentiment analyses
             st = sentimenttweet(self.channel, aresults, self.workdir, dbid=self.dbid)
             st.tweetsentiment()
+            
+        if self.test == 0 and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
+            tr.twitter_upload()
+            tiktok_upload(self.channel, self.date, os.path.join(self.workdir, 'output/', 'stitched-video.mp4'))
 
         if self.test == 0:
             try:

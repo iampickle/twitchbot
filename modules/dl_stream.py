@@ -9,6 +9,7 @@ import glob
 from logbook import Logger
 from moviepy.editor import *
 import json
+import shutil
 
 import modules.twitterbot.youtube_upload as ytupload
 from modules.notification import notification
@@ -148,8 +149,6 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
     log.info("🧰 managing")   
     try:
         if 'tbot' in channelconf['streamers'][channel]:
-            log.info("🐦 starting twitter_bot")
-            noti.message("start twitterbot")
             noti.message("start fixing")
             subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', workdir+tempfilename, '-c', 'copy', workdir+tempfilename5])
             os.remove(workdir+tempfilename)
@@ -158,9 +157,14 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
             #wait for os to unlock file for futher use
             time.sleep(20)
             
+            log.info("🐦 starting twitter_bot")
+            noti.message("start twitterbot")
             tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(channel)]['tbot']['words'], channel=channel, dbid=dbid)
-            tbs.start()            
-        if 'ytupload' in channelconf['streamers'][channel]:
+            tbs.start()
+        if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
+            log.info('NOKEEP on deleting all files!')
+            shutil.rmtree(workdir)
+        elif 'ytupload' in channelconf['streamers'][channel]:
             if channelconf['streamers'][channel]['ytupload'] == True:
                 p = Process(target=fixm, args=(workdir, tempfilename5, tempfilename2, filename, log, 1, channel, ndate, udate,))
                 p.start()

@@ -92,12 +92,13 @@ class vstats():
         dbarray = []
         gns = []
         old_title = get_data('game_id')
+        nt=get_data('game_name')
         if self.test != None:
             exittime = time.time() + self.test
 
         x_values.append(datetime.datetime.now())
         y_values.append(get_data('viewer_count'))
-        categorylegend.append(f'start: {old_title}\r')
+        categorylegend.append(f'start: {nt}\r')
         change_title.append([datetime.datetime.now(), get_data('game_id')])
         gns.append(get_data('game_name'))
         print('starting loop')

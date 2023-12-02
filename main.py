@@ -38,6 +38,7 @@ def sub1(channel, token):
     workdir = dir+'/'+channel
     today = datetime.today()
     folder = channel + "-stream-" + str(today.strftime("%Y-%m-%d"))
+    dbid = None
 
     if os.path.isdir(workdir+'/'+folder) == False:
         os.mkdir(workdir+'/'+folder)
@@ -63,7 +64,7 @@ def sub1(channel, token):
 
     log.info("⬇️ starting download")
     filename = now.strftime("%H.%M")
-    dl_stream.dlstream(channel, filename, workdir, token, today)
+    dl_stream.dlstream(channel, filename, workdir, token, today, dbid)
 
 #folder routine1
 def check_main_folder(channel):
