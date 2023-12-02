@@ -1,5 +1,6 @@
 import json
 import os
+from click import option
 from dotenv import load_dotenv
 load_dotenv()
 from datetime import timedelta
@@ -19,6 +20,8 @@ from .db import *
 listname = os.environ.get("channel-config")
 channelconfraw = open(listname, "r")
 channelconf = json.load(channelconfraw)
+
+options_codec = os.environ.get("codec")
 
 
 class wordprep:
@@ -135,7 +138,7 @@ class trimming:
         final_clip = concatenate_videoclips(self.editlist)
         # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
         final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30,
-                                   temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None)
+                                   temp_audiofile="temp-audio.m4a", remove_temp=True, codec=options_codec, audio_codec="aac", logger=None)
         vvar.close()
         """ subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', os.path.join(self.workdir,'output/','stitched-video-nonf.mp4'), '-c', 'copy', os.path.join(self.workdir,'output/','stitched-video.mp4'), '-y'])
         os.remove(os.path.join(self.workdir,'output/','stitched-video-nonf.mp4')) """
@@ -163,7 +166,7 @@ class trimming:
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4')).subclip(start, end)
                 clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'),
-                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None, verbose=False)
+                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, verbose=False)
                 clip.close()
                 self.uploadlist.append(str(n)+'-part.mp4')
                 n += 1
@@ -178,7 +181,7 @@ class trimming:
 
                 clip = clip.subclip(start, end)
                 clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'),
-                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None, verbose=False)
+                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, verbose=False)
                 clip.close()
                 self.uploadlist.append(str(rest)+'-part.mp4')
         

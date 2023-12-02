@@ -23,6 +23,7 @@ listname = os.environ.get("channel-config")
 channelconfraw = open(listname, "r")
 channelconf = json.load(channelconfraw)
 
+options_codec = os.environ.get("codec")
 cs = True if channelconf.get('compress-server') else False
 num = 0
 pool_sema = Semaphore(6)
@@ -189,7 +190,7 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
         if cs == True:
             job(channel, ndate, lt1, fn)
         else:
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', 'libx264', '-crf', '16', '-preset', 'slow', '-c:a', 'copy', workdir+fn + ".mp4"])
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', options_codec, '-crf', '16', '-preset', 'slow', '-c:a', 'copy', workdir+fn + ".mp4"])
         log.info("🧰 file compressed")
         
     elif choosen == 1:
@@ -221,7 +222,7 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
         if cs == True:
             job(channel, ndate, lt1, fn)
         else:
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', 'libx264', '-crf', '21', '-preset', 'faster', '-c:a', 'copy', workdir+fn + ".mp4"])
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', options_codec, '-crf', '21', '-preset', 'faster', '-c:a', 'copy', workdir+fn + ".mp4"])
             log.info("🧰 file compressed")
             
     if cs == True:
