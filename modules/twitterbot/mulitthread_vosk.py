@@ -134,8 +134,8 @@ def startanalysing(filename, workdir):
     elaps = endt - startt
     print(f'time elapsed: {elaps}s')
 
-    # Schreibe die Ergebnisse in eine Textdatei
+    """ # Schreibe die Ergebnisse in eine Textdatei
     with open(workdir+'output.txt', 'w') as f:
         for result in results:
-            f.write(str(result)+'\n')
+            f.write(str(result)+'\n') """
     return results
