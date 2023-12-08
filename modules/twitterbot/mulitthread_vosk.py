@@ -6,6 +6,8 @@ from vosk import Model, KaldiRecognizer, SetLogLevel
 from moviepy.editor import AudioFileClip
 from tqdm import tqdm
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 def process_audio(model, filename, thread_num, num_threads, output_queue, process_queue):
     # Initialisiere den Vosk-Sprachmodell und den KaldiRecognizer
@@ -120,7 +122,7 @@ def transcribe_audio(filename, num_threads):
 
 def startanalysing(filename, workdir):
     # Passe die Anzahl der Threads und den Dateinamen an
-    num_threads = 8
+    num_threads = int(os.environ.get("vosk-threads"))
 
     audio_clip = AudioFileClip(filename)
     audio_duration = audio_clip.duration
@@ -134,8 +136,8 @@ def startanalysing(filename, workdir):
     elaps = endt - startt
     print(f'time elapsed: {elaps}s')
 
-    """ # Schreibe die Ergebnisse in eine Textdatei
+    # Schreibe die Ergebnisse in eine Textdatei
     with open(workdir+'output.txt', 'w') as f:
         for result in results:
-            f.write(str(result)+'\n') """
+            f.write(str(result)+'\n')
     return results

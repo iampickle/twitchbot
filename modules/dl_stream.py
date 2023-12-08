@@ -96,7 +96,8 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
         for stream in streamfiles:
             videos.append(VideoFileClip(stream))
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, verbose=False, logger=None)
+        final.write_videofile(workdir+tempfilename, fps=30,
+                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M')
         for vin in videos:
             vin.close()
         for streamfile in streamfiles:
@@ -134,7 +135,8 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
             videos.append(VideoFileClip(workdir+stream))
         videos.append(VideoFileClip(workdir+'2'+tempfilename))
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, verbose=False, logger=None)
+        final.write_videofile(workdir+tempfilename, fps=30,
+                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M')
         for vin in videos:
             vin.close()
         os.remove(workdir+'2'+tempfilename)
@@ -190,7 +192,7 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
         if cs == True:
             job(channel, ndate, lt1, fn)
         else:
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', options_codec, '-crf', '16', '-preset', 'slow', '-c:a', 'copy', workdir+fn + ".mp4"])
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v', 'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
         log.info("🧰 file compressed")
         
     elif choosen == 1:
@@ -222,7 +224,7 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
         if cs == True:
             job(channel, ndate, lt1, fn)
         else:
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', options_codec, '-crf', '21', '-preset', 'faster', '-c:a', 'copy', workdir+fn + ".mp4"])
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v', 'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
             log.info("🧰 file compressed")
             
     if cs == True:

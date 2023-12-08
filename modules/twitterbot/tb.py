@@ -6,6 +6,8 @@ load_dotenv()
 from datetime import timedelta
 from time import sleep
 from moviepy.editor import *
+from moviepy.config import change_settings
+change_settings({"FFMPEG_BINARY":"ffmpeg"})
 from vosk import SetLogLevel
 import re
 
@@ -138,8 +140,9 @@ class trimming:
         final_clip = concatenate_videoclips(self.editlist)
         # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
         final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30,
-                                   temp_audiofile="temp-audio.m4a", remove_temp=True, codec=options_codec, audio_codec="aac", logger=None)
+                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M', preset='medium')
         vvar.close()
+        final_clip.close()
         """ subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', os.path.join(self.workdir,'output/','stitched-video-nonf.mp4'), '-c', 'copy', os.path.join(self.workdir,'output/','stitched-video.mp4'), '-y'])
         os.remove(os.path.join(self.workdir,'output/','stitched-video-nonf.mp4')) """
 
@@ -165,8 +168,8 @@ class trimming:
 
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4')).subclip(start, end)
-                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'),
-                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, verbose=False)
+                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'), fps=30,
+                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M')
                 clip.close()
                 self.uploadlist.append(str(n)+'-part.mp4')
                 n += 1
@@ -180,8 +183,8 @@ class trimming:
                 print('rest', start, end)
 
                 clip = clip.subclip(start, end)
-                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'),
-                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, verbose=False)
+                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'), fps=30,
+                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M')
                 clip.close()
                 self.uploadlist.append(str(rest)+'-part.mp4')
         
@@ -310,7 +313,8 @@ class init:
 
         if self.test == 0:
             try:
-                os.remove(os.path.join(self.workdir, 'output.txt'))
+                #os.remove(os.path.join(self.workdir, 'output.txt'))
                 #os.remove(os.path.join(self.workdir, self.vfile))
+                pass
             except Exception as e:
                 print('faild to delete temp files', e)
