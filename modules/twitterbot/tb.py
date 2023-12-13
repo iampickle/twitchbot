@@ -103,46 +103,48 @@ class trimming:
 
         if os.path.isdir(os.path.join(self.workdir, 'output')) == False:
                         os.mkdir(os.path.join(self.workdir, 'output'))
-        vvar = VideoFileClip(os.path.join(
-                        self.workdir, self.vfile))
-        
-        for line in self.jsonwordlist:
-            try:
-                line = json.loads(line)
-                if len(line) == 0 or len(line) == 1:
-                    pass
-                elif line['word'] in self.word and line['conf'] >= 0.8:
-                    fstart = line['start']
-                    fend = line['end']
-                    start = fstart - self.startpadding
-                    end = fend + self.endpadding
-                    # print('word:', line['word'], 'start:', self.timeconv(start), 'end:', self.timeconv(end))
-                    endtimecode = self.timeconv(end)
-                    #vodfile = line['word']+'-' + endtimecode.replace(":", ".")+'.mp4'
-                    # print(start, end)
-                    x = vvar.subclip(start, end)
-                    if x == None:
+        with VideoFileClip(os.path.join(self.workdir, self.vfile)) as vvar:
+            for line in self.jsonwordlist:
+                try:
+                    line = json.loads(line)
+                    if len(line) == 0 or len(line) == 1:
                         pass
-                    else:
-                        self.editlist.append(x)
-                    # print('append to list\n')
-            except Exception as e:
-                print('there was n error with  appending the file:'+str(e))
-                pass
+                    elif line['word'] in self.word and line['conf'] >= 0.8:
+                        fstart = line['start']
+                        fend = line['end']
+                        start = fstart - self.startpadding
+                        end = fend + self.endpadding
+                        # print('word:', line['word'], 'start:', self.timeconv(start), 'end:', self.timeconv(end))
+                        endtimecode = self.timeconv(end)
+                        #vodfile = line['word']+'-' + endtimecode.replace(":", ".")+'.mp4'
+                        # print(start, end)
+                        x = vvar.subclip(start, end)
+                        if x == None:
+                            pass
+                        else:
+                            self.editlist.append(x)
+                        # print('append to list\n')
+                except Exception as e:
+                    print('there was n error with  appending the file:'+str(e))
+                    pass
 
-        print("stitching")
-        
-        if self.addition != None:
-            filename = f'{self.addition}stitched-video.mp4'
-        else:
-            filename = 'stitched-video.mp4'
-        
-        final_clip = concatenate_videoclips(self.editlist)
-        # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
-        final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30,
-                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M', preset='medium')
-        vvar.close()
-        final_clip.close()
+            print("stitching")
+            
+            if self.addition != None:
+                filename = f'{self.addition}stitched-video.mp4'
+            else:
+                filename = 'stitched-video.mp4'
+            
+            final_clip = concatenate_videoclips(self.editlist)
+            # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
+            final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30,
+                                    temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M', preset='medium')
+            
+            print('closing all clips')
+            for x in self.editlist:
+                x.close()
+            vvar.close()
+            final_clip.close()
         """ subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', os.path.join(self.workdir,'output/','stitched-video-nonf.mp4'), '-c', 'copy', os.path.join(self.workdir,'output/','stitched-video.mp4'), '-y'])
         os.remove(os.path.join(self.workdir,'output/','stitched-video-nonf.mp4')) """
 
