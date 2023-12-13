@@ -259,7 +259,7 @@ class vstats():
         if os.environ.get("db-host"):    
             #write to db
             db = database()
-            db.dump_array_via_id(int(self.dbid), 'topchatter', bigbuarray)
+            db.dump_array_via_id(self.dbid, 'topchatter', bigbuarray)
             db.cd()
         
         # Convert to a DataFrame and remove the Timestamp
