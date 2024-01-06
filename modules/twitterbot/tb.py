@@ -236,7 +236,9 @@ class init:
     def __init__(self, path, word, sp=5, ep=3, channel='', test=False, dbid=None, addittion=None):
         patharray = path.split('/')
         self.workdir = "/".join(patharray[:-1])
+        print(f'working dir set to: {self.workdir}')
         self.vfile = patharray[-1:][0]
+        print(f'filename: {self.vfile}')
         self.word = word
         self.channel = channel
         self.dbid = dbid
@@ -261,7 +263,7 @@ class init:
     def start(self):
         """cv = combinevids(self.workdir)
         """
-        # start wordpre
+        # start word recognition or load tempfile
         if self.test == 0 or 3 or 4 or 5:
             wp = wordprep(self.workdir, self.vfile)
             if os.path.isfile(os.path.join(self.workdir, 'output.txt')) == True:
@@ -275,7 +277,7 @@ class init:
                 aresults = wp.analyse()
 
                 sleep(10)
-                
+        #database upload words        
         if self.test == False and self.dbid != None:
             print('uploading word to db')
             dbres = []
@@ -297,19 +299,23 @@ class init:
             db = database()
             db.dump_array_via_id(self.dbid, 'words', dbres)
             db.cd()
-            
+         
+        #trim word to right lengt   
         if self.test == 0 or 1 or 4 or 5:
-            print('trimming and word analytics')
+            print('trimming words')
             # trimming and concating video also uplad to twitter
             tr = trimming(aresults, self.workdir, self.vfile, self.word, self.channel, self.sp, self.ep, self.addittion)
             tr.trim_on_word()
-            
+        
+        #do histogramm and Vader analytics
         if self.test == 0:
             # tweet sentiment analyses
+            print('Vader analytic and histogram')
             st = sentimenttweet(self.channel, aresults, self.workdir, dbid=self.dbid)
             st.tweetsentiment()
             
         if self.test == 0 and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
+            print('upload to twitter')
             tr.twitter_upload()
             tiktok_upload(self.channel, self.date, os.path.join(self.workdir, 'output/', 'stitched-video.mp4'))
 
