@@ -21,10 +21,10 @@ def countsaidwords(results, workdir, channel):
             line = line.replace("\"", ",")
             line = line.replace("\'", "\"")
             line = json.loads(line)
+            time = line['start'] // 60
+            farray.append(time)
         except:
             pass
-        time = line['start'] // 60
-        farray.append(time)
 
     plt.style.use('dark_background')
     plt.hist(farray, bins=130)
