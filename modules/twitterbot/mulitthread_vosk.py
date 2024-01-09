@@ -120,11 +120,6 @@ def transcribe_audio(filename, num_threads):
 
     return results
 
-def seconds_to_time(seconds):
-    hours, remainder = divmod(seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return "{:02}h {:02}m {:02}s".format(int(hours), int(minutes), int(seconds))
-
 def startanalysing(filename, workdir):
     # Passe die Anzahl der Threads und den Dateinamen an
     num_threads = int(os.environ.get("vosk-threads"))
@@ -139,7 +134,7 @@ def startanalysing(filename, workdir):
     endt = time.time()
     
     elaps = endt - startt
-    print(f'time elapsed: {seconds_to_time(elaps)}s')
+    print(f'time elapsed: {elaps}s')
 
     # Schreibe die Ergebnisse in eine Textdatei
     with open(workdir+'output.txt', 'w') as f:
