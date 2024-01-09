@@ -1,3 +1,6 @@
 [submodule "modules/twitterbot/GerVADER"]
 	path = modules/twitterbot/GerVADER
 	url = https://github.com/iampickle/GerVADER.git
+[submodule "modules/laughter-detection"]
+	path = modules/laughter-detection
+	url = https://github.com/iampickle/laughter-detection.git

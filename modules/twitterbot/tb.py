@@ -1,6 +1,5 @@
 import json
 import os
-from click import option
 from dotenv import load_dotenv
 load_dotenv()
 from datetime import timedelta
