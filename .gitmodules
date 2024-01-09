@@ -4,3 +4,6 @@
 [submodule "modules/laughter-detection"]
 	path = modules/laughter-detection
 	url = https://github.com/iampickle/laughter-detection.git
+[submodule "modules/twitterbot/laughter-detection"]
+	path = modules/twitterbot/laughter-detection
+	url = https://github.com/iampickle/laughter-detection.git
