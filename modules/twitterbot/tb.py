@@ -137,7 +137,7 @@ class trimming:
             final_clip = concatenate_videoclips(self.editlist)
             # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
             final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30,
-                                    temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec="libx264", audio_codec="aac", logger=None, bitrate='5M', preset='medium')
+                                    temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'), verbose=False, remove_temp=True, codec="libx264", audio_codec="aac", logger=None, bitrate='5M', preset='medium')
             
             print('closing all clips')
             for x in self.editlist:
@@ -170,7 +170,9 @@ class trimming:
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4')).subclip(start, end)
                 clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'), fps=30,
-                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M')
+                     temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'),
+                     verbose=False, remove_temp=True, codec=options_codec,
+                     audio_codec="aac", logger=None, bitrate='5M')
                 clip.close()
                 self.uploadlist.append(str(n)+'-part.mp4')
                 n += 1
@@ -185,7 +187,7 @@ class trimming:
 
                 clip = clip.subclip(start, end)
                 clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'), fps=30,
-                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M')
+                                   temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'), verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M')
                 clip.close()
                 self.uploadlist.append(str(rest)+'-part.mp4')
         

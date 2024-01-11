@@ -97,7 +97,7 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
             videos.append(VideoFileClip(stream))
         final = concatenate_videoclips(videos)
         final.write_videofile(workdir+tempfilename, fps=30,
-                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M', preset='medium')
+                                   temp_audiofile=os.path.join(workdir, 'temp-audio.m4a'), verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M', preset='medium')
         for vin in videos:
             vin.close()
         for streamfile in streamfiles:
@@ -136,7 +136,7 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
         videos.append(VideoFileClip(workdir+'2'+tempfilename))
         final = concatenate_videoclips(videos)
         final.write_videofile(workdir+tempfilename, fps=30,
-                                   temp_audiofile="temp-audio.m4a", verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M', preset='medium')
+                                   temp_audiofile=os.path.join(workdir, 'temp-audio.m4a'), verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M', preset='medium')
         for vin in videos:
             vin.close()
         os.remove(workdir+'2'+tempfilename)
