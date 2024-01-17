@@ -134,10 +134,15 @@ class trimming:
             else:
                 filename = 'stitched-video.mp4'
             
+            odir = os.getcwd()
+            os.chdir(os.path.join(self.workdir, 'output/'))
+            
             final_clip = concatenate_videoclips(self.editlist)
             # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
             final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30,
-                                    temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'), verbose=False, remove_temp=True, codec="libx264", audio_codec="aac", logger=None, bitrate='5M', preset='medium')
+                                    temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'), verbose=False, logger=None, remove_temp=True, codec="libx264", audio_codec="aac", bitrate='5M', preset='medium')
+            
+            os.chdir(odir)
             
             print('closing all clips')
             for x in self.editlist:
@@ -167,13 +172,19 @@ class trimming:
                 end = 120 * n + 120
                 print('n', start, end)
 
+                odir = os.getcwd()
+                os.chdir(os.path.join(self.workdir, 'output/'))
+
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4')).subclip(start, end)
                 clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'), fps=30,
                      temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'),
-                     verbose=False, remove_temp=True, codec=options_codec,
-                     audio_codec="aac", logger=None, bitrate='5M')
+                     verbose=False, logger=None, remove_temp=True, codec=options_codec,
+                     audio_codec="aac", bitrate='5M')
                 clip.close()
+                
+                os.chdir(odir)
+                
                 self.uploadlist.append(str(n)+'-part.mp4')
                 n += 1
             if rest != 0:
@@ -185,10 +196,16 @@ class trimming:
                 end = start + rest
                 print('rest', start, end)
 
+                odir = os.getcwd()
+                os.chdir(os.path.join(self.workdir, 'output/'))
+
                 clip = clip.subclip(start, end)
                 clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'), fps=30,
-                                   temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'), verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M')
+                                   temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'), verbose=False,logger=None, remove_temp=True, codec=options_codec, audio_codec="aac", bitrate='5M')
                 clip.close()
+                
+                os.chdir(odir)
+                
                 self.uploadlist.append(str(rest)+'-part.mp4')
         
         print(len(self.uploadlist))

@@ -95,9 +95,16 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
         videos = []
         for stream in streamfiles:
             videos.append(VideoFileClip(stream))
+            
+        odir = os.getcwd()
+        os.chdir(workdir)
+            
         final = concatenate_videoclips(videos)
         final.write_videofile(workdir+tempfilename, fps=30,
-                                   temp_audiofile=os.path.join(workdir, 'temp-audio.m4a'), verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M', preset='medium')
+                                   temp_audiofile=os.path.join(workdir, 'temp-audio.m4a'), verbose=False, logger=None, remove_temp=True, codec=options_codec, audio_codec="aac", bitrate='5M', preset='medium')
+        
+        os.chdir(odir)
+        
         for vin in videos:
             vin.close()
         for streamfile in streamfiles:
@@ -134,9 +141,15 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
         for stream in sorted_mp4_files:
             videos.append(VideoFileClip(workdir+stream))
         videos.append(VideoFileClip(workdir+'2'+tempfilename))
+        
+        odir = os.getcwd()
+        os.chdir(workdir)
+        
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, fps=30,
-                                   temp_audiofile=os.path.join(workdir, 'temp-audio.m4a'), verbose=False, remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, bitrate='5M', preset='medium')
+        final.write_videofile(workdir+tempfilename, fps=30, temp_audiofile=os.path.join(workdir, 'temp-audio.m4a'), verbose=False, logger=None, remove_temp=True, codec=options_codec, audio_codec="aac", bitrate='5M', preset='medium')
+        
+        os.chdir(odir)
+        
         for vin in videos:
             vin.close()
         os.remove(workdir+'2'+tempfilename)
