@@ -1,5 +1,8 @@
+from ast import Try
+from genericpath import exists
 import json
 import os
+from venv import logger
 from dotenv import load_dotenv
 load_dotenv()
 from datetime import timedelta
@@ -104,6 +107,7 @@ class trimming:
                         os.mkdir(os.path.join(self.workdir, 'output'))
         with VideoFileClip(os.path.join(self.workdir, self.vfile)) as vvar:
             for line in self.jsonwordlist:
+                x = None
                 try:
                     line = json.loads(line)
                     if len(line) == 0 or len(line) == 1:
@@ -118,14 +122,20 @@ class trimming:
                         #vodfile = line['word']+'-' + endtimecode.replace(":", ".")+'.mp4'
                         # print(start, end)
                         x = vvar.subclip(start, end)
+                except:
+                    #print('couldn\'t load line')
+                    pass
+                if x is not None:
+                    try:
                         if x == None:
                             pass
                         else:
                             self.editlist.append(x)
                         # print('append to list\n')
-                except Exception as e:
-                    print('there was n error with  appending the file:'+str(e))
-                    pass
+                    except Exception as e:
+                        print('there was n error with  appending the file:'+str(e))
+                        print(line)
+                        pass
 
             print("stitching")
             
@@ -139,8 +149,7 @@ class trimming:
             
             final_clip = concatenate_videoclips(self.editlist)
             # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
-            final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30,
-                                    temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'), verbose=False, logger=None, remove_temp=True, codec="libx264", audio_codec="aac", bitrate='5M', preset='medium')
+            final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30, verbose=False, remove_temp=True, audio_codec="aac", codec=options_codec, bitrate='5M', preset='medium', threads=16, logger=None)
             
             os.chdir(odir)
             
@@ -177,10 +186,7 @@ class trimming:
 
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4')).subclip(start, end)
-                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'), fps=30,
-                     temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'),
-                     verbose=False, logger=None, remove_temp=True, codec=options_codec,
-                     audio_codec="aac", bitrate='5M')
+                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'), fps=30, verbose=False, remove_temp=True, audio_codec="aac", codec=options_codec, bitrate='5M', preset='medium', threads=16, logger=None)
                 clip.close()
                 
                 os.chdir(odir)
@@ -200,8 +206,7 @@ class trimming:
                 os.chdir(os.path.join(self.workdir, 'output/'))
 
                 clip = clip.subclip(start, end)
-                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'), fps=30,
-                                   temp_audiofile=os.path.join(self.workdir, 'temp-audio.m4a'), verbose=False,logger=None, remove_temp=True, codec=options_codec, audio_codec="aac", bitrate='5M')
+                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'), fps=30, verbose=False, remove_temp=True, audio_codec="aac", codec=options_codec, bitrate='5M', preset='medium', threads=16, logger=None)
                 clip.close()
                 
                 os.chdir(odir)
@@ -319,7 +324,7 @@ class init:
             db.cd()
          
         #trim word to right lengt   
-        if self.test == 0 or 1 or 4 or 5:
+        if self.test == 0 or 1 or 4 or 5 or 6:
             print('trimming words')
             # trimming and concating video also uplad to twitter
             tr = trimming(aresults, self.workdir, self.vfile, self.word, self.channel, self.sp, self.ep, self.addittion)
@@ -332,7 +337,7 @@ class init:
             st = sentimenttweet(self.channel, aresults, self.workdir, dbid=self.dbid)
             st.tweetsentiment()
             
-        if self.test == 0 and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
+        if self.test == 0 or 6 and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
             print('upload to twitter')
             tr.twitter_upload()
             tiktok_upload(self.channel, self.date, os.path.join(self.workdir, 'output/', 'stitched-video.mp4'))

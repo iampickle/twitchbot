@@ -100,8 +100,7 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
         os.chdir(workdir)
             
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, fps=30,
-                                   temp_audiofile=os.path.join(workdir, 'temp-audio.m4a'), verbose=False, logger=None, remove_temp=True, codec=options_codec, audio_codec="aac", bitrate='5M', preset='medium')
+        final.write_videofile(workdir+tempfilename, fps=30, verbose=False, remove_temp=True, audio_codec="aac", codec=options_codec, bitrate='5M', preset='medium', threads=16, logger=None)
         
         os.chdir(odir)
         
