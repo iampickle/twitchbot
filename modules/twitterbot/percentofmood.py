@@ -8,12 +8,13 @@ load_dotenv()
 
 vaderanalyzer = SentimentIntensityAnalyzer()
 
+
 def moodpercent(results, channel, dbid=''):
     allwords = []
-    #ofile = os.path.join(workdir, 'output.txt')
-    #with open(str(ofile), 'r') as fr:
+    # ofile = os.path.join(workdir, 'output.txt')
+    # with open(str(ofile), 'r') as fr:
     for line in results:
-        #line = str(line.rstrip())
+        # line = str(line.rstrip())
         line = line.replace("\"", ",")
         line = line.replace("\'", "\"")
         try:
@@ -22,7 +23,6 @@ def moodpercent(results, channel, dbid=''):
                 allwords.append(line['word'])
         except:
             pass
-
 
     longsentence = ' '.join(allwords)
 
@@ -33,12 +33,13 @@ def moodpercent(results, channel, dbid=''):
 
     if os.environ.get("db-host") and dbid != None:
         db = database()
-        db.dump_array_via_id(dbid, 'emotions', [all_neg, all_pos, all_neu]) 
+        db.dump_array_via_id(dbid, 'emotions', [all_neg, all_pos, all_neu])
         db.cd()
 
-
-    text = '#'+channel+' Die Stimmung im Stream war,\nzu '+str(all_neg)+'% neagtiv😡,'+'\nzu '+str(all_pos)+'% positiv😊,'+'\nund zu '+str(all_neu)+'% neutral😐'
-    #+'\n\nai-tweet-test: '+aisent
+    text = '#'+channel+' Die Stimmung im Stream war,\nzu ' + \
+        str(all_neg)+'% neagtiv😡,'+'\nzu '+str(all_pos ) \
+        +'% positiv😊,'+'\nund zu '+str(all_neu)+'% neutral😐'
+    # +'\n\nai-tweet-test: '+aisent
 
     # tweet sentiment
     tweet_text(text)

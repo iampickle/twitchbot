@@ -13,8 +13,8 @@ class analyser:
         self.outputpath = outputpath
 
     def analyse_text(self, text):
-        return self.model.predict_sentiment([text], output_probabilities = True)[-1][0]
-    
+        return self.model.predict_sentiment([text], output_probabilities=True)[-1][0]
+
     def readfile(self):
         try:
             ofile = open(self.outputpath, 'r')
