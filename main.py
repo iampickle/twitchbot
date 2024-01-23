@@ -88,34 +88,38 @@ class main:
         weighting.readstate(self.channel, log)
         wait = 0
         while True:
-            global now
-            now = datetime.now()
-            self.log = logbook.Logger(self.channel)
-            # check if token is to old
+            try:
+                while True:
+                    global now
+                    now = datetime.now()
+                    self.log = logbook.Logger(self.channel)
+                    # check if token is to old
 
-            if wait == 0:
-                wait, self.token = getauth.post(self.channel)
-            elif wait <= time.time():
-                wait, self.token = getauth.post(self.channel)
-            else:
-                pass
+                    if wait == 0:
+                        wait, self.token = getauth.post(self.channel)
+                    elif wait <= time.time():
+                        wait, self.token = getauth.post(self.channel)
+                    else:
+                        pass
 
-            # check streamstate
-            if checkstream.checkUser(self.channel, self.token) == True:
-                self.log.info("🔴 is online")
-                weighting.onlinetimeweighting(self.channel, self.log)
-                self.sub1()
-            weights = weighting.analyseweights()
-            if weights == 'array error':
-                self.log.error(weights)
-                pass
-            # look if array was set reacently and if not just look in hour now in array and the sleep accoringly
-            if len(weights) == 24:
-                time.sleep(120)
-            elif now.hour in weights:
-                time.sleep(30)
-            else:
-                time.sleep(120)
+                    # check streamstate
+                    if checkstream.checkUser(self.channel, self.token) == True:
+                        self.log.info("🔴 is online")
+                        weighting.onlinetimeweighting(self.channel, self.log)
+                        self.sub1()
+                    weights = weighting.analyseweights()
+                    if weights == 'array error':
+                        self.log.error(weights)
+                        pass
+                    # look if array was set reacently and if not just look in hour now in array and the sleep accoringly
+                    if len(weights) == 24:
+                        time.sleep(120)
+                    elif now.hour in weights:
+                        time.sleep(30)
+                    else:
+                        time.sleep(120)
+            except Exception as e:
+                log.warn(f'Main loop failed restarting, error-code: {e}')
 
 
 def start_threads():
