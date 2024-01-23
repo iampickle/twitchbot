@@ -1,3 +1,4 @@
+import chunk
 import modules.checkstream as checkstream
 from ..twitter import *
 import datetime
@@ -22,9 +23,9 @@ load_dotenv()
 
 
 class vstats():
-    
+
     def __init__(self, token, stime, workdir, channel, dbid=None, test=None):
-        
+
         self.client_id = os.environ.get("Client-ID-Twitch")
         self.token = token
         self.stime = stime
@@ -34,16 +35,73 @@ class vstats():
         self.fileq = Queue()
         self.arrayq = Queue()
         self.test = test
-        
+
         self.workdir = os.path.join(workdir, 'analytics/')
         if not os.path.exists(self.workdir):
-             os.makedirs(self.workdir)
+            os.makedirs(self.workdir)
         if test == None:
-            self.start()
-    
+            pass
+            # self.start()
+
+        # chat record vars
+        self.bigbuarray = []
+
+        # viewer stats vars
+        self.x_values = []
+        self.y_values = []
+        self.change_title = []
+        self.categorylegend = []
+        self.gns = []
+        self.dbarray = []
+        self.legendcount = 0
+
+        # Check for temp files
+        print('checking for files')
+        if os.path.exists(os.path.join(workdir, 'analytics/chat.tmp')):
+            print('found previous temp file, loading it ...')
+            # Load tmp file
+            with open(os.path.join(workdir, 'analytics/chat.tmp'), 'r') as temp_file:
+                content = temp_file.read()
+                for line in content.split('\n'):
+                    try:
+                        line = line.strip()
+                        data = json.loads(line)
+                        if not line:
+                            continue
+                        else:
+                            self.bigbuarray.append(data)
+                    except:
+                        pass
+        self.ctmpfile = open(os.path.join(self.workdir, 'chat.tmp'), 'a+')
+
+        if os.path.exists(os.path.join(self.workdir, 'vstats.tmp')):
+            print('found previous temp file, loading it ...')
+            # Load tmp file
+            with open(os.path.join(workdir, 'analytics/vstats.tmp'), 'r') as temp_file:
+                content = temp_file.read()
+                for line in content.split('\n'):
+                    line = line.strip()  # Strip leading and trailing whitespaces
+                    if not line:
+                        continue  # Skip empty lines
+                    data = json.loads(line)
+                    if data != None:
+                        time = float(data['time'])
+                        if data['gamename'] != None:
+                            self.categorylegend.append(data['categorylegend'])
+                            self.gns.append(data['gamename'])
+                            self.legendcount = data['lc']
+                        if data['changedtitle'] is not None:
+                            self.change_title.append([datetime.datetime.fromisoformat(
+                                data['changedtitle'][0]), data['changedtitle'][1]])
+                        if data['x'] != None and data['y'] != None:
+                            self.x_values.append(
+                                datetime.datetime.fromisoformat(data['x']))
+                            self.y_values.append(data['y'])
+            # os.remove(os.path.join(workdir, 'analytics/vstats.tmp'))
+        self.tmpfile = open(os.path.join(
+            workdir, 'analytics/vstats.tmp'), 'a+')
+
     def collect_data(self):
-        categorylegend = []
-        legendcount = 0
         url = f'https://api.twitch.tv/helix/streams?user_login={self.channel}'
         API_HEADERS = {
             'Client-ID': self.client_id,
@@ -58,7 +116,8 @@ class vstats():
 
             if 'data' in data and len(data['data']) > 0:
                 game_info = data['data'][0]
-                category_picture_url = game_info['box_art_url'].replace('{width}x{height}', '1520x2048')
+                category_picture_url = game_info['box_art_url'].replace(
+                    '{width}x{height}', '1520x2048')
             else:
                 return None
 
@@ -68,11 +127,12 @@ class vstats():
                 img = Image.open(BytesIO(response.content))
                 return img
             else:
-                print(f"Error fetching image for category '{game_id}'. Status code: {response.status_code}")
+                print(
+                    f"Error fetching image for category '{game_id}'. Status code: {response.status_code}")
                 return None
 
-
         # Function to retrieve data from Twitch API
+
         def get_data(type=None):
             req = requests.get(url, headers=API_HEADERS)
             jsondata = req.json()
@@ -86,52 +146,90 @@ class vstats():
 
         name = str(uuid.uuid4())+'.png'
         filename = os.path.join(self.workdir, name)
-        x_values = []
-        y_values = []
-        change_title = []
         dbarray = []
-        gns = []
         old_title = get_data('game_id')
-        nt=get_data('game_name')
+        nt = get_data('game_name')
         if self.test != None:
             exittime = time.time() + self.test
 
-        x_values.append(datetime.datetime.now())
-        y_values.append(get_data('viewer_count'))
-        categorylegend.append(f'start: {nt}\r')
-        change_title.append([datetime.datetime.now(), get_data('game_id')])
-        gns.append(get_data('game_name'))
-        print('starting loop')
+        chuck = {'time': str(time.time()), 'categorylegend': None,
+                 'changedtitle': None, 'gamename': None, 'x': None, 'y': None, 'lc': None}
 
-       
+        date = datetime.datetime.now()
+        self.x_values.append(date)
+        chuck['x'] = date.isoformat()
+        viewer = get_data('viewer_count')
+        self.y_values.append(viewer)
+        chuck['y'] = viewer
+
+        # need to check if last game was in temp if temp was loaded
+        reversed_gns = self.gns[::-1]
+        if reversed_gns == [] or reversed_gns[0] != get_data('game_name'):
+            if reversed_gns == []:
+                self.change_title.append([date, get_data('game_id')])
+                chuck['changedtitle'] = [date.isoformat(), get_data('game_id')]
+                self.gns.append(get_data('game_name'))
+                chuck['gamename'] = get_data('game_name')
+                self.categorylegend.append(f'start: {nt}\r')
+                chuck['categorylegend'] = f'start: {nt}\r'
+            else:
+                self.change_title.append([date, get_data('game_id')])
+                chuck['changedtitle'] = [date.isoformat(), get_data('game_id')]
+                self.gns.append(get_data('game_name'))
+                chuck['gamename'] = get_data('game_name')
+                gn = get_data('game_name')
+                self.categorylegend.append(f'{str(self.legendcount)}: {gn}\r')
+                chuck['categorylegend'] = f'{str(self.legendcount)}: {gn}\r'
+            chuck['lc'] = self.legendcount
+
+        chuck_json_string = json.dumps(chuck)
+        self.tmpfile.write(str(chuck_json_string)+'\n')
+        self.tmpfile.flush()
+
+        print('starting loop')
         while True:
+            # data structure dict
+            chuck = {'time': str(time.time()), 'categorylegend': None,
+                     'changedtitle': None, 'gamename': None, 'x': None, 'y': None, 'lc': None}
+
             if self.test != None and exittime <= time.time():
                 break
-            
+
             try:
                 chname = None
                 time.sleep(self.stime)
-                
+
                 try:
                     viewer = get_data('viewer_count')
                     now_title = get_data('game_id')
-                    gn = get_data('game_name')  # Added to retrieve the game name
-                            
+                    # Added to retrieve the game name
+                    gn = get_data('game_name')
+
                     if now_title != old_title and now_title != None:
-                        legendcount += 1
+                        self.legendcount += 1
                         old_title = now_title
-                        categorylegend.append(f'{str(legendcount)}: {gn}\r')  # Include game name in the legend
+                        chuck['categorylegend'] = f'{str(self.legendcount)}: {gn}\r'
+                        # Include game name in the legend
+                        self.categorylegend.append(
+                            f'{str(self.legendcount)}: {gn}\r')
                         chname = now_title
-                        change_title.append([datetime.datetime.now(), now_title])
-                        gns.append(gn)
+                        chuck['changedtitle'] = [
+                            datetime.datetime.now().isoformat(), now_title]
+                        self.change_title.append(
+                            [datetime.datetime.now(), now_title])
+                        chuck['gamename'] = gn
+                        self.gns.append(gn)
+                        chuck['lc'] = self.legendcount
                 except:
                     break
 
                 if checkstream.checkUser(self.channel, self.token) == True:
                     data = datetime.datetime.now()
-                    x_values.append(data)
-                    y_values.append(viewer)
-                    
+                    self.x_values.append(data)
+                    chuck['x'] = data.isoformat()
+                    self.y_values.append(viewer)
+                    chuck['y'] = viewer
+
                     if chname != None:
                         dbarray.append([time.time(), data, viewer, chname])
                     else:
@@ -139,69 +237,76 @@ class vstats():
                 elif checkstream.checkUser(self.channel, self.token) == False:
                     print('pre exit plotting waiting 15min')
                     time.sleep(900)
-                    
+
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting plotting')
                         break
                     else:
                         pass
+                chuck_json_string = json.dumps(chuck)
+                self.tmpfile.write(str(chuck_json_string)+'\n')
+                self.tmpfile.flush()
             except KeyboardInterrupt:
                 print("Keyboard interrupt detected. Exiting loop...")
-                break
-        if os.environ.get("db-host"):
-            db = database()
-            db.dump_array_via_id(self.dbid, 'viewotime', dbarray) 
-            db.cd()
-        
-        # Generate random vertical lines
-        image_paths = [x[1] for x in change_title]
-        # Generate random data for the graph
+                exit()
+            if os.environ.get("db-host"):
+                db = database()
+                db.dump_array_via_id(self.dbid, 'viewotime', dbarray)
+                db.cd()
 
-        # Plot the graph and add indicators
-        plt.style.use('dark_background')
-        fig, ax = plt.subplots()
-        ax.plot(x_values, y_values, label='viewers')  # Random graph
+            # Generate random vertical lines
+            image_paths = [x[1] for x in self.change_title]
+            # Generate random data for the graph
 
-        xs = [x[0] for x in change_title]
-        xs = np.asarray(xs)
-        ax.vlines(xs, 0, ax.get_ylim()[1], color='purple', lw=2, alpha=0.7)
+            # Plot the graph and add indicators
+            plt.style.use('dark_background')
+            fig, ax = plt.subplots()
+            ax.plot(self.x_values, self.y_values,
+                    label='viewers')  # Random graph
 
-        scaled_images_info = [load_and_resize_image(path) for path in image_paths]
+            xs = [x[0] for x in self.change_title]
+            xs = np.asarray(xs)
+            ax.vlines(xs, 0, ax.get_ylim()[1], color='purple', lw=2, alpha=0.7)
 
-        scalingfactor = 0.03
-        for (x, img, gn) in zip(xs, scaled_images_info, gns):
-            try:
-                img_width, img_height = img.size
-                scaled_width = int(img_width * scalingfactor)
-                scaled_height = int(img_height * scalingfactor)
-                imge = img.resize((scaled_width, scaled_height))
-                ab = AnnotationBbox(OffsetImage(imge), (x, 1), frameon=False)
-                ax.add_artist(ab)
+            scaled_images_info = [load_and_resize_image(
+                path) for path in image_paths]
 
-                # Add text below the image containing the game name
-                #bbox_props = dict(boxstyle="square", facecolor="white", edgecolor="black", linewidth=2)  # Specify bounding box properties
-                ax.text(x, -scaled_height*2.4, f'{gn}', ha='center', va='top', color='white', fontsize=5,)
-            except Exception as e:
-                print(f"Error adding AnnotationBbox: {e}")
+            scalingfactor = 0.03
+            for (x, img, gn) in zip(xs, scaled_images_info, self.gns):
+                try:
+                    img_width, img_height = img.size
+                    scaled_width = int(img_width * scalingfactor)
+                    scaled_height = int(img_height * scalingfactor)
+                    imge = img.resize((scaled_width, scaled_height))
+                    ab = AnnotationBbox(OffsetImage(
+                        imge), (x, 1), frameon=False)
+                    ax.add_artist(ab)
 
-        ax.legend()
+                    # Add text below the image containing the game name
+                    # bbox_props = dict(boxstyle="square", facecolor="white", edgecolor="black", linewidth=2)  # Specify bounding box properties
+                    ax.text(x, -scaled_height*2.4,
+                            f'{gn}', ha='center', va='top', color='white', fontsize=5,)
+                except Exception as e:
+                    print(f"Error adding AnnotationBbox: {e}")
 
-        # Show the plot
-        plt.savefig(filename, dpi=300)
-        plt.close()
-        self.fileq.put([filename, categorylegend])
-        return filename
-        #os.remove(filename)
-    
+            ax.legend()
+
+            # Show the plot
+            plt.savefig(filename, dpi=300)
+            plt.close()
+            self.fileq.put([filename, self.categorylegend])
+            return filename
+            # os.remove(filename)
+
     def connect_to_twitch_chat(self):
-            server = 'irc.chat.twitch.tv'
-            port = 6667
-            irc = socket.socket()
-            irc.settimeout(3)
-            irc.connect((server, port))
-            irc.send(f'NICK justinfan12345\n'.encode('utf-8'))
-            irc.send(f'JOIN #{self.channel}\n'.encode('utf-8'))
-            return irc
+        server = 'irc.chat.twitch.tv'
+        port = 6667
+        irc = socket.socket()
+        irc.settimeout(3)
+        irc.connect((server, port))
+        irc.send(f'NICK justinfan12345\n'.encode('utf-8'))
+        irc.send(f'JOIN #{self.channel}\n'.encode('utf-8'))
+        return irc
 
     def read_chat(self):
         buffer = ''
@@ -218,52 +323,59 @@ class vstats():
                     return username, message, time.time()
         except Exception as e:
             return None
-    
+
     def collect_chat(self):
-        bigbuarray = []
         c = time.time() + 240
         timeout = 0
         self.irc = self.connect_to_twitch_chat()
-        while True:
-            try:
-                c += 1
-                message = self.read_chat()
-                if message != None:
-                    timeout = 0
-                    bigbuarray.append(message)
-                elif message == None:
-                    timeout += 1
-                if timeout == 100:
-                    time.sleep(5)
-                    try:
-                        self.irc.close()  # Close the socket connection
-                        self.irc = None
-                        self.irc = self.connect_to_twitch_chat()
-                    except:
-                        pass
-                if c <= time.time() or timeout >= 20:
-                    c = time.time() + 240
-                    if checkstream.checkUser(self.channel, self.token) == False:
-                        print('pre exit chat waiting 15min')
-                        time.sleep(900)
+        try:
+            while True:
+                try:
+                    c += 1
+                    message = self.read_chat()
+                    if message != None:
+                        timeout = 0
+                        self.bigbuarray.append(message)
+                        self.ctmpfile.write(json.dumps(message)+'\n')
+                        self.ctmpfile.flush()
+                    elif message == None:
+                        timeout += 1
+                    if timeout == 100:
+                        time.sleep(5)
+                        try:
+                            self.irc.close()  # Close the socket connection
+                            self.irc = None
+                            self.irc = self.connect_to_twitch_chat()
+                        except:
+                            pass
+                    if c <= time.time() or timeout >= 20:
+                        c = time.time() + 240
                         if checkstream.checkUser(self.channel, self.token) == False:
-                            print('exiting chat')
-                            try:
-                                self.irc.close()  # Close the socket connection
-                            except:
-                                pass
-                            break           
-            except Exception as e:
-                print(f'main error: {e}')
-        
-        if os.environ.get("db-host"):    
-            #write to db
+                            print('pre exit chat waiting 15min')
+                            time.sleep(900)
+                            if checkstream.checkUser(self.channel, self.token) == False:
+                                print('exiting chat')
+                                try:
+                                    self.irc.close()  # Close the socket connection
+                                except:
+                                    pass
+                                break
+                except Exception as e:
+                    print(f'main error: {e}')
+        except KeyboardInterrupt:
+            print("Keyboard interrupt detected. Exiting loop...")
+            exit()
+
+        if os.environ.get("db-host"):
+            # write to db
             db = database()
-            db.dump_array_via_id(int(self.dbid), 'topchatter', bigbuarray)
+            db.dump_array_via_id(self.dbid, 'topchatter', self.bigbuarray)
             db.cd()
-        
+
+        print('plotting messages')
         # Convert to a DataFrame and remove the Timestamp
-        df = pd.DataFrame(bigbuarray, columns=['username', 'message', 'timestamp'])
+        df = pd.DataFrame(self.bigbuarray, columns=[
+                          'username', 'message', 'timestamp'])
         df = df[['username', 'message']]  # Keep only 'username' and 'message'
 
         # Count the number of messages per user
@@ -274,35 +386,38 @@ class vstats():
         top = message_counts.head(10)
         fig = ff.create_table(top)
         fig.update_layout(
-                        template="plotly_dark",  # Use Plotly's dark theme
-                        autosize=False,
-                        width=500,
-                        height=200,
-                        )
+            template="plotly_dark",  # Use Plotly's dark theme
+            autosize=False,
+            width=500,
+            height=200,
+        )
 
         name = str(uuid.uuid4())+'.png'
         filename = os.path.join(self.workdir, name)
         print('ploting table')
         fig.write_image(filename, scale=2)
-        
+
         self.arrayq.put(filename)
-                
-
-
 
     def start(self):
         cd = Process(target=self.collect_data)
         vs = Process(target=self.collect_chat)
+
+        # Start and join the 'collect_data' process first
         cd.start()
+        # After 'collect_data' completes, start the 'collect_chat' process
         vs.start()
-        cd.join()
+
         vs.join()
+        cd.join()
+
+        # Now retrieve the results
         f = self.fileq.get()
         a = self.arrayq.get()
         print('done')
-        
-        tweet_pics([f[0],a], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")
 
-        
-        
-        
+        os.remove(os.path.join(self.workdir, 'analytics/vstats.tmp'))
+        os.remove(os.path.join(self.workdir, 'analytics/chat.tmp'))
+
+        tweet_pics(
+            [f[0], a], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")

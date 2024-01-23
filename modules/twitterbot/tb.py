@@ -1,21 +1,25 @@
+from .db import *
+from ..tiktok.upload import tiktok_upload
+from ..twitter import *
+from .percentofmood import moodpercent
+from .countwords import countsaidwords
+from .notification import notification
+from .mulitthread_vosk import startanalysing
+import re
+from vosk import SetLogLevel
+from moviepy.config import change_settings
+from moviepy.editor import *
+from time import sleep
+from datetime import timedelta
+from ast import Try
+from genericpath import exists
 import json
 import os
-from click import option
+from venv import logger
 from dotenv import load_dotenv
 load_dotenv()
-from datetime import timedelta
-from time import sleep
-from moviepy.editor import *
-from vosk import SetLogLevel
-import re
+change_settings({"FFMPEG_BINARY": "ffmpeg"})
 
-from .mulitthread_vosk import startanalysing
-from .notification import notification
-from .countwords import countsaidwords
-from .percentofmood import moodpercent
-from ..twitter import *
-from ..tiktok.upload import tiktok_upload
-from .db import *
 
 listname = os.environ.get("channel-config")
 channelconfraw = open(listname, "r")
@@ -29,9 +33,9 @@ class wordprep:
 
     def __init__(self, workdir, vfile):
         # look if path has / at end of string. if not add it
-        
+
         SetLogLevel(-1)
-        
+
         if workdir[-1] == '/':
             self.workdir = workdir
         elif workdir[-1] != '/':
@@ -44,17 +48,15 @@ class wordprep:
         sound = AudioFileClip(os.path.join(self.workdir,self.vfile))
         sound.write_audiofile(self.afilename, fps=44100, nbytes=2, buffersize=2000, ffmpeg_params=["-ac", "1"], write_logfile=False, verbose=True)
     """
-    
 
     def analyse(self):
         return startanalysing(os.path.join(self.workdir, self.vfile), self.workdir)
-        
 
 
 class trimming:
     noti = notification()
 
-    def __init__(self, results, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5, addittion = None):
+    def __init__(self, results, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5, addittion=None):
         self.workdir = workdir
         self.vfile = vfile
         self.word = word
@@ -73,9 +75,9 @@ class trimming:
     def trim_on_word(self):
         print(self.word)
         print("snipping")
-    #with open(os.path.join(self.workdir, 'output.txt'), 'r') as fr:
+    # with open(os.path.join(self.workdir, 'output.txt'), 'r') as fr:
         for line in self.results:
-            #line = str(line.rstrip())
+            # line = str(line.rstrip())
             line = line.replace("\"", ",")
             line = line.replace("\'", "\"")
             self.jsonwordlist.append(line)
@@ -90,56 +92,71 @@ class trimming:
                     count = count + 1
             except:
                 pass
-        
+
         if count == 0:
             print('passing because no words to process')
             return
-            
+
         print(f'{count} {self.word}\'s in file')
         print('appending to cutting list ...')
         self.noti.message(f'there are {count} {self.word}, to be processed')
 
         if os.path.isdir(os.path.join(self.workdir, 'output')) == False:
-                        os.mkdir(os.path.join(self.workdir, 'output'))
-        vvar = VideoFileClip(os.path.join(
-                        self.workdir, self.vfile))
-        
-        for line in self.jsonwordlist:
-            try:
-                line = json.loads(line)
-                if len(line) == 0 or len(line) == 1:
-                    pass
-                elif line['word'] in self.word and line['conf'] >= 0.8:
-                    fstart = line['start']
-                    fend = line['end']
-                    start = fstart - self.startpadding
-                    end = fend + self.endpadding
-                    # print('word:', line['word'], 'start:', self.timeconv(start), 'end:', self.timeconv(end))
-                    endtimecode = self.timeconv(end)
-                    #vodfile = line['word']+'-' + endtimecode.replace(":", ".")+'.mp4'
-                    # print(start, end)
-                    x = vvar.subclip(start, end)
-                    if x == None:
+            os.mkdir(os.path.join(self.workdir, 'output'))
+        with VideoFileClip(os.path.join(self.workdir, self.vfile)) as vvar:
+            for line in self.jsonwordlist:
+                x = None
+                try:
+                    line = json.loads(line)
+                    if len(line) == 0 or len(line) == 1:
                         pass
-                    else:
-                        self.editlist.append(x)
-                    # print('append to list\n')
-            except Exception as e:
-                print('there was n error with  appending the file:'+str(e))
-                pass
+                    elif line['word'] in self.word and line['conf'] >= 0.8:
+                        fstart = line['start']
+                        fend = line['end']
+                        start = fstart - self.startpadding
+                        end = fend + self.endpadding
+                        # print('word:', line['word'], 'start:', self.timeconv(start), 'end:', self.timeconv(end))
+                        endtimecode = self.timeconv(end)
+                        # vodfile = line['word']+'-' + endtimecode.replace(":", ".")+'.mp4'
+                        # print(start, end)
+                        x = vvar.subclip(start, end)
+                except:
+                    # print('couldn\'t load line')
+                    pass
+                if x is not None:
+                    try:
+                        if x == None:
+                            pass
+                        else:
+                            self.editlist.append(x)
+                        # print('append to list\n')
+                    except Exception as e:
+                        print('there was n error with  appending the file:'+str(e))
+                        print(line)
+                        pass
 
-        print("stitching")
-        
-        if self.addition != None:
-            filename = f'{self.addition}stitched-video.mp4'
-        else:
-            filename = 'stitched-video.mp4'
-        
-        final_clip = concatenate_videoclips(self.editlist)
-        # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
-        final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30,
-                                   temp_audiofile="temp-audio.m4a", remove_temp=True, codec=options_codec, audio_codec="aac", logger=None)
-        vvar.close()
+            print("stitching")
+
+            if self.addition != None:
+                filename = f'{self.addition}stitched-video.mp4'
+            else:
+                filename = 'stitched-video.mp4'
+
+            odir = os.getcwd()
+            os.chdir(os.path.join(self.workdir, 'output/'))
+
+            final_clip = concatenate_videoclips(self.editlist)
+            # final_clip.write_videofile(workdir+'output/'+'stitched-video-nonf.mp4')
+            final_clip.write_videofile(os.path.join(self.workdir, 'output/', filename), fps=30, verbose=False, remove_temp=True,
+                                       audio_codec="aac", codec=options_codec, bitrate='5M', preset='medium', threads=16, logger=None)
+
+            os.chdir(odir)
+
+            print('closing all clips')
+            for x in self.editlist:
+                x.close()
+            vvar.close()
+            final_clip.close()
         """ subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', os.path.join(self.workdir,'output/','stitched-video-nonf.mp4'), '-c', 'copy', os.path.join(self.workdir,'output/','stitched-video.mp4'), '-y'])
         os.remove(os.path.join(self.workdir,'output/','stitched-video-nonf.mp4')) """
 
@@ -150,7 +167,7 @@ class trimming:
             self.workdir, 'output/', 'stitched-video.mp4'))
         duration = clip.duration
         clip.close()
-        
+
         print('duration:', duration)
         if duration > 120:
             timessecons = clip.duration // 120
@@ -163,11 +180,17 @@ class trimming:
                 end = 120 * n + 120
                 print('n', start, end)
 
+                odir = os.getcwd()
+                os.chdir(os.path.join(self.workdir, 'output/'))
+
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4')).subclip(start, end)
-                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'),
-                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, verbose=False)
+                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(n)+'-part.mp4'), fps=30, verbose=False, remove_temp=True,
+                                     audio_codec="aac", codec=options_codec, bitrate='5M', preset='medium', threads=16, logger=None)
                 clip.close()
+
+                os.chdir(odir)
+
                 self.uploadlist.append(str(n)+'-part.mp4')
                 n += 1
             if rest != 0:
@@ -179,26 +202,33 @@ class trimming:
                 end = start + rest
                 print('rest', start, end)
 
+                odir = os.getcwd()
+                os.chdir(os.path.join(self.workdir, 'output/'))
+
                 clip = clip.subclip(start, end)
-                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'),
-                                     temp_audiofile="temp-audio.m4a", remove_temp=True, codec=options_codec, audio_codec="aac", logger=None, verbose=False)
+                clip.write_videofile(os.path.join(self.workdir, 'output/'+str(rest)+'-part.mp4'), fps=30, verbose=False,
+                                     remove_temp=True, audio_codec="aac", codec=options_codec, bitrate='5M', preset='medium', threads=16, logger=None)
                 clip.close()
+
+                os.chdir(odir)
+
                 self.uploadlist.append(str(rest)+'-part.mp4')
-        
+
         print(len(self.uploadlist))
         print(self.uploadlist)
-        
+
         sleep(10)
-        
+
         if len(self.uploadlist) != 0:
             print('uploading ...')
             for c, ugoal in enumerate(self.uploadlist, start=1):
                 print(f'upload-{c}: {ugoal}')
-                tweet_media(self.workdir+'/output/'+ugoal, '#'+self.channel+' '+str(c)+'/'+str(len(self.uploadlist)))
+                tweet_media(self.workdir+'/output/'+ugoal, '#' +
+                            self.channel+' '+str(c)+'/'+str(len(self.uploadlist)))
         else:
             print('uploading')
-            tweet_media(self.workdir+'/output/'+'stitched-video.mp4', '#'+self.channel)
-            
+            tweet_media(self.workdir+'/output/' +
+                        'stitched-video.mp4', '#'+self.channel)
 
 
 class sentimenttweet:
@@ -208,9 +238,9 @@ class sentimenttweet:
         self.aresults = aresults
         self.workdir = workdir
         self.dbid = dbid
-        
+
     def tweetsentiment(self):
-        
+
         if self.aresults == []:
             print('no resilts to process')
             if os.environ.get("db-host"):
@@ -221,21 +251,21 @@ class sentimenttweet:
                 moodpercent(self.aresults, self.channel, dbid=self.dbid)
             else:
                 moodpercent(self.aresults, self.channel)
-                
+
             countsaidwords(self.aresults, self.workdir, self.channel)
-        
-        
 
 
 class init:
     def __init__(self, path, word, sp=5, ep=3, channel='', test=False, dbid=None, addittion=None):
         patharray = path.split('/')
         self.workdir = "/".join(patharray[:-1])
+        print(f'working dir set to: {self.workdir}')
         self.vfile = patharray[-1:][0]
+        print(f'filename: {self.vfile}')
         self.word = word
         self.channel = channel
         self.dbid = dbid
-        self.addittion=addittion
+        self.addittion = addittion
         match = re.search(r'\d{4}-\d{2}-\d{2}', path)
         if match:
             self.date = match.group()
@@ -256,7 +286,7 @@ class init:
     def start(self):
         """cv = combinevids(self.workdir)
         """
-        # start wordpre
+        # start word recognition or load tempfile
         if self.test == 0 or 3 or 4 or 5:
             wp = wordprep(self.workdir, self.vfile)
             if os.path.isfile(os.path.join(self.workdir, 'output.txt')) == True:
@@ -264,53 +294,62 @@ class init:
                 aresults = []
                 with open(os.path.join(self.workdir, 'output.txt'), 'r') as fr:
                     for line in fr:
-                        #line = str(line.rstrip())
+                        # line = str(line.rstrip())
                         aresults.append(line)
             else:
                 aresults = wp.analyse()
 
                 sleep(10)
-                
+        # database upload words
         if self.test == False and self.dbid != None:
             print('uploading word to db')
             dbres = []
             for line in aresults:
+                try:
                     try:
-                        try:
-                            line = str(line.rstrip())
-                        except:
-                            pass
-                        line = line.replace("\"", ",")
-                        line = line.replace("\'", "\"")
-                        line = json.loads(line)
-                        if len(line) == 0 or len(line) == 1:
-                            pass
-                        else:
-                            dbres.append([line['start'], line['end'], line['word'], line['conf']])
+                        line = str(line.rstrip())
                     except:
                         pass
+                    line = line.replace("\"", ",")
+                    line = line.replace("\'", "\"")
+                    line = json.loads(line)
+                    if len(line) == 0 or len(line) == 1:
+                        pass
+                    else:
+                        dbres.append([line['start'], line['end'],
+                                     line['word'], line['conf']])
+                except:
+                    pass
             db = database()
             db.dump_array_via_id(self.dbid, 'words', dbres)
             db.cd()
-            
-        if self.test == 0 or 1 or 4 or 5:
-            print('trimming and word analytics')
+
+        # trim word to right lengt
+        if self.test == 0 or 1 or 4 or 5 or 6:
+            print('trimming words')
             # trimming and concating video also uplad to twitter
-            tr = trimming(aresults, self.workdir, self.vfile, self.word, self.channel, self.sp, self.ep, self.addittion)
+            tr = trimming(aresults, self.workdir, self.vfile, self.word,
+                          self.channel, self.sp, self.ep, self.addittion)
             tr.trim_on_word()
-            
+
+        # do histogramm and Vader analytics
         if self.test == 0:
             # tweet sentiment analyses
-            st = sentimenttweet(self.channel, aresults, self.workdir, dbid=self.dbid)
+            print('Vader analytic and histogram')
+            st = sentimenttweet(self.channel, aresults,
+                                self.workdir, dbid=self.dbid)
             st.tweetsentiment()
-            
-        if self.test == 0 and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
+
+        if self.test == 0 or 6 and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
+            print('upload to twitter')
             tr.twitter_upload()
-            tiktok_upload(self.channel, self.date, os.path.join(self.workdir, 'output/', 'stitched-video.mp4'))
+            tiktok_upload(self.channel, self.date, os.path.join(
+                self.workdir, 'output/', 'stitched-video.mp4'))
 
         if self.test == 0:
             try:
-                os.remove(os.path.join(self.workdir, 'output.txt'))
-                #os.remove(os.path.join(self.workdir, self.vfile))
+                # os.remove(os.path.join(self.workdir, 'output.txt'))
+                # os.remove(os.path.join(self.workdir, self.vfile))
+                pass
             except Exception as e:
                 print('faild to delete temp files', e)

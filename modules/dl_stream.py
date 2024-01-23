@@ -1,3 +1,4 @@
+from modules.twitterbot import tb
 import os
 import subprocess
 import time
@@ -17,7 +18,6 @@ import modules.checkstream as checkstream
 from modules.compress_server_client import job
 
 noti = notification()
-from modules.twitterbot import tb 
 
 listname = os.environ.get("channel-config")
 channelconfraw = open(listname, "r")
@@ -29,15 +29,17 @@ num = 0
 pool_sema = Semaphore(6)
 clip_start = 0
 
+
 def extract_time(filename):
-        # Extrahiere die Uhrzeit (HH.MM) aus dem Dateinamen
-        time_str = os.path.splitext(filename)[0]
-        try:
-            hours, minutes = map(int, time_str.split('.'))
-            return hours, minutes
-        except ValueError:
-            # Wenn der Dateiname nicht dem erwarteten Muster entspricht, wird die Datei am Ende sortiert
-            return 24, 0
+    # Extrahiere die Uhrzeit (HH.MM) aus dem Dateinamen
+    time_str = os.path.splitext(filename)[0]
+    try:
+        hours, minutes = map(int, time_str.split('.'))
+        return hours, minutes
+    except ValueError:
+        # Wenn der Dateiname nicht dem erwarteten Muster entspricht, wird die Datei am Ende sortiert
+        return 24, 0
+
 
 def dek(workdir, tempfilename, channel, log, token, pausetime=720):
     noti.message("starting download of: "+channel)
@@ -49,7 +51,7 @@ def dek(workdir, tempfilename, channel, log, token, pausetime=720):
                         '-l', 'none', '--hls-duration', '24:00:00'], stdout=subprocess.DEVNULL)
     except Exception as e:
         log.info(e)
-        
+
     waittime = time.time()
     log.info('⚠️ lost stream')
     while True:
@@ -59,32 +61,31 @@ def dek(workdir, tempfilename, channel, log, token, pausetime=720):
         if checkstream.checkUser(channel, token) == True:
             log.info('❕ stream still active reopening download')
             return 'reopen'
-        
 
 
 def dlstream(channel, filename, workdir, token, ndate, dbid=None):
     log = Logger(channel)
-    #os.chdir(folder)
+    # os.chdir(folder)
     url = 'https://www.twitch.tv/' + channel
-    
-    #set file 
+
+    # set file
     now = datetime.now()
     filename = now.strftime("%H.%M")
-    tempfilename = "temp_1_" + filename  + ".mp4"
+    tempfilename = "temp_1_" + filename + ".mp4"
     tempfilename5 = 'temp_1.5_' + filename + '.mp4'
     tempfilename2 = "temp_2_" + filename + ".mp4"
-    
+
     streamcount = 0
     streamfiles = []
     udate = date.today()
     while True:
-        check = dek(workdir, filename+'_'+str(streamcount)+'_stream.mp4', channel, log, token)
+        check = dek(workdir, filename+'_'+str(streamcount) +
+                    '_stream.mp4', channel, log, token)
         streamfiles.append(workdir+filename+'_'+str(streamcount)+'_stream.mp4')
         streamcount += 1
         if check != 'reopen':
             break
-    
-    
+
     if len(streamfiles) == 1:
         print(len(streamfiles))
         streamfilenames = streamfiles[0].split('/')[-1]
@@ -95,28 +96,36 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
         videos = []
         for stream in streamfiles:
             videos.append(VideoFileClip(stream))
+
+        odir = os.getcwd()
+        os.chdir(workdir)
+
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, verbose=False, logger=None)
+        final.write_videofile(workdir+tempfilename, fps=30, verbose=False, remove_temp=True,
+                              audio_codec="aac", codec=options_codec, bitrate='5M', preset='medium', threads=16, logger=None)
+
+        os.chdir(odir)
+
         for vin in videos:
             vin.close()
         for streamfile in streamfiles:
             time.sleep(2)
             os.remove(streamfile)
-        
+
     print(workdir+'*.mp4')
     prefiles = glob.glob(workdir+'/*.mp4')
-    #prefiles.pop(workdir+filename)
+    # prefiles.pop(workdir+filename)
     pattern = re.compile(r"\d\d\.\d\d_\d_stream\.mp4", re.IGNORECASE)
     for i in prefiles:
         i = i.split('/')
         if pattern.match(i[-1]):
             print(f'renaming: {i[-1]} ==> {i[-1][:5]+".mp4"}')
             os.rename(workdir+i[-1], workdir+i[-1][:5]+'.mp4')
-        
+
     prestreamfiles = []
     print(workdir+'*.mp4')
     prefiles = glob.glob(workdir+'/*.mp4')
-    #prefiles.pop(workdir+filename)
+    # prefiles.pop(workdir+filename)
     opattern = re.compile(r"\d\d\.\d\d\.mp4", re.IGNORECASE)
     for i in prefiles:
         i = i.split('/')
@@ -133,51 +142,62 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
         for stream in sorted_mp4_files:
             videos.append(VideoFileClip(workdir+stream))
         videos.append(VideoFileClip(workdir+'2'+tempfilename))
+
+        odir = os.getcwd()
+        os.chdir(workdir)
+
         final = concatenate_videoclips(videos)
-        final.write_videofile(workdir+tempfilename, verbose=False, logger=None)
+        final.write_videofile(workdir+tempfilename, fps=30, temp_audiofile=os.path.join(workdir, 'temp-audio.m4a'), verbose=False,
+                              logger=None, remove_temp=True, codec=options_codec, audio_codec="aac", bitrate='5M', preset='medium')
+
+        os.chdir(odir)
+
         for vin in videos:
             vin.close()
         os.remove(workdir+'2'+tempfilename)
         for stream in sorted_mp4_files:
             time.sleep(2)
             os.remove(workdir+stream)
-        
-        
 
     log.info("🔴 Recording stream is done")
     noti.message("download done, start fixing of: "+channel)
 
-    log.info("🧰 managing")   
+    log.info("🧰 managing")
     try:
         if 'tbot' in channelconf['streamers'][channel]:
             noti.message("start fixing")
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err', '-i', workdir+tempfilename, '-c', 'copy', workdir+tempfilename5])
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-err_detect', 'ignore_err',
+                            '-i', workdir+tempfilename, '-c', 'copy', workdir+tempfilename5])
             os.remove(workdir+tempfilename)
             log.info("🧰 file fixed")
 
-            #wait for os to unlock file for futher use
+            # wait for os to unlock file for futher use
             time.sleep(20)
-            
+
             log.info("🐦 starting twitter_bot")
             noti.message("start twitterbot")
-            tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(channel)]['tbot']['words'], channel=channel, dbid=dbid)
+            tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(
+                channel)]['tbot']['words'], channel=channel, dbid=dbid)
             tbs.start()
         if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
             log.info('NOKEEP on deleting all files!')
             shutil.rmtree(workdir)
         elif 'ytupload' in channelconf['streamers'][channel]:
             if channelconf['streamers'][channel]['ytupload'] == True:
-                p = Process(target=fixm, args=(workdir, tempfilename5, tempfilename2, filename, log, 1, channel, ndate, udate,))
+                p = Process(target=fixm, args=(workdir, tempfilename5,
+                            tempfilename2, filename, log, 1, channel, ndate, udate,))
                 p.start()
         else:
-            p = Process(target=fixm, args=(workdir, tempfilename, tempfilename2, filename, log, 0, channel, ndate, udate,))
+            p = Process(target=fixm, args=(workdir, tempfilename,
+                        tempfilename2, filename, log, 0, channel, ndate, udate,))
             p.start()
-    except Exception as e:  
+    except Exception as e:
         log.info(e)
-    
+
     return filename
 
-def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, ndate, udate=date.today()):
+
+def fixm(workdir, tempfilename, tempfilename2, filename, log, choosen, channel, ndate, udate=date.today()):
     time.sleep(25)
     log.info("⚙️ starting video managing routien")
 
@@ -190,11 +210,12 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
         if cs == True:
             job(channel, ndate, lt1, fn)
         else:
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', options_codec, '-crf', '16', '-preset', 'slow', '-c:a', 'copy', workdir+fn + ".mp4"])
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
+                            'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
         log.info("🧰 file compressed")
-        
+
     elif choosen == 1:
-        
+
         vfile = VideoFileClip(os.path.join(workdir, lt1))
         duration = vfile.duration
         vfile.close()
@@ -204,9 +225,11 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
             print(vlist)
             try:
                 for n, vid in enumerate(vlist, start=1):
-                    vid = ['/'.join(vid.split('/')[:-1])+'/',vid.split('/')[-1]]
+                    vid = ['/'.join(vid.split('/')[:-1]) +
+                           '/', vid.split('/')[-1]]
                     print(vid)
-                    ytupload.upload(vid[0], vid[1], str(udate)+'/'+str(n), channel)
+                    ytupload.upload(vid[0], vid[1], str(
+                        udate)+'/'+str(n), channel)
                     ydir = os.path.join(workdir, "ytsplits")
                     shutil.rmtree(workdir)
                 """ for vid in vlist:
@@ -218,15 +241,15 @@ def fixm(workdir, tempfilename,tempfilename2, filename, log, choosen, channel, n
         else:
             ytupload.upload(workdir, lt1, udate, channel)
 
-        
         if cs == True:
             job(channel, ndate, lt1, fn)
         else:
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir+lt1, '-c:v', options_codec, '-crf', '21', '-preset', 'faster', '-c:a', 'copy', workdir+fn + ".mp4"])
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
+                            'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
             log.info("🧰 file compressed")
-            
+
     if cs == True:
-            pass
+        pass
     else:
         try:
             os.remove(workdir+lt1)

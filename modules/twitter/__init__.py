@@ -34,6 +34,8 @@ def tweet_pics(paths, text=""):
 def tweet_media(path, text=""):
     try:
         resp = api.media_upload(path, media_category='tweet_video')
-        api2.create_tweet(text=text, media_ids=[resp.media_id_string])
+        print(resp.media_id_string)
+        api2.create_tweet(text=text, media_ids=[str(resp.media_id_string)])
     except Exception as e:
         print('error while tweeting', e)
+        print(resp)

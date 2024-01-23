@@ -12,6 +12,7 @@ from optparse import OptionParser
 
 filelist = []
 
+
 def split_by_manifest(filename, manifest, vcodec="copy", acodec="copy",
                       extra="", **kwargs):
     """ Split video into segments based on the given manifest file.
@@ -101,7 +102,8 @@ def split_by_seconds(filename, split_length, goald, vcodec="copy", acodec="copy"
         print("Video length is less then the target split length.")
         raise SystemExit
 
-    split_cmd = ["ffmpeg", '-y', '-loglevel', 'quiet', "-i", filename, "-vcodec", vcodec, "-acodec", acodec] + shlex.split(extra)
+    split_cmd = ["ffmpeg", '-y', '-loglevel', 'quiet', "-i", filename,
+                 "-vcodec", vcodec, "-acodec", acodec] + shlex.split(extra)
     try:
         filebase = ".".join(filename.split(".")[:-1])
         fileext = filename.split(".")[-1]
@@ -114,8 +116,9 @@ def split_by_seconds(filename, split_length, goald, vcodec="copy", acodec="copy"
         else:
             split_start = split_length * n
 
-        name =  filebase.split('/')[-1] + "-" + str(n + 1) + "-of-" + str(split_count) + "." + fileext
-        
+        name = filebase.split('/')[-1] + "-" + str(n + 1) + \
+            "-of-" + str(split_count) + "." + fileext
+
         split_args += ["-ss", str(split_start), "-t", str(split_length),
                        os.path.join(goald, name)]
         print("About to run: " + " ".join(split_cmd + split_args))
@@ -213,21 +216,27 @@ def main():
             file_size = os.stat(options.filename).st_size
             split_filesize = None
             if options.split_filesize:
-                split_filesize = int(options.split_filesize * options.filesize_factor)
+                split_filesize = int(
+                    options.split_filesize * options.filesize_factor)
             if split_filesize and options.chunk_strategy == 'even':
                 options.split_chunks = ceildiv(file_size, split_filesize)
             if options.split_chunks:
-                options.split_length = ceildiv(video_length, options.split_chunks)
+                options.split_length = ceildiv(
+                    video_length, options.split_chunks)
             if not options.split_length and split_filesize:
-                options.split_length = int(split_filesize / float(file_size) * video_length)
+                options.split_length = int(
+                    split_filesize / float(file_size) * video_length)
         if not options.split_length:
             bailout()
         split_by_seconds(video_length=video_length, **options.__dict__)
-    
+
+
 def call_outside(filename, seglenth, savedic, goald):
     vid = os.path.join(savedic, filename)
     video_length = get_video_length(vid)
-    split_by_seconds(filename=vid, video_length=video_length, split_length=seglenth, goald=os.path.join(savedic, goald))
+    split_by_seconds(filename=vid, video_length=video_length,
+                     split_length=seglenth, goald=os.path.join(savedic, goald))
+
 
 if __name__ == '__main__':
     main()

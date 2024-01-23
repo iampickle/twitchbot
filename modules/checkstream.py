@@ -35,7 +35,7 @@ def checkUser(userName, token): #returns true if online, false if not
             
     except Exception as e:
         log.error("⁉️ Error checking user: ", e)
-        return jsondata
+        return None
 
 def get_title(userName, token):
     log = Logger(userName)

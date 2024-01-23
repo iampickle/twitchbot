@@ -1,8 +1,8 @@
+from logbook import Logger, StreamHandler
+import os
 import requests
 from dotenv import load_dotenv
 load_dotenv()
-import os
-from logbook import Logger, StreamHandler
 
 
 class notification:
@@ -18,7 +18,8 @@ class notification:
         report = {}
         report["value1"] = message
         try:
-            requests.post(f"https://maker.ifttt.com/trigger/{self.event}/with/key/{self.Authtoken}", data=report)
+            requests.post(
+                f"https://maker.ifttt.com/trigger/{self.event}/with/key/{self.Authtoken}", data=report)
         except Exception as e:
             print(f"notification could not be send: {e}")
 
