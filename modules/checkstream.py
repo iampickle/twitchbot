@@ -11,8 +11,8 @@ client_id=os.environ.get("Client-ID-Twitch")
 def checkUser(userName, token): #returns true if online, false if not
     log = Logger(userName)
     url = 'https://api.twitch.tv/helix/streams?user_login='+userName
-    #url = url.rstrip()
-    client_id=os.environ.get("Client-ID-Twitch")
+    client_id = os.environ.get("Client-ID-Twitch")
+    jsondata = None
 
     load_dotenv()
 
@@ -22,8 +22,6 @@ def checkUser(userName, token): #returns true if online, false if not
     }
 
     try:
-        #logging.printlog("🔎 checking user: "+userName)
-
         req = requests.get(url, headers=API_HEADERS)
         jsondata = req.json()
 
@@ -34,19 +32,22 @@ def checkUser(userName, token): #returns true if online, false if not
             return False
             
     except Exception as e:
-        log.error("⁉️ Error checking user: ", e)
+        if jsondata != None:
+            log.error("⁉️ Error checking user: ", e ,"\r json: ", jsondata)
+        else:
+            log.error("⁉️ Error checking user: ", e)
         return None
 
 def get_title(userName, token):
     log = Logger(userName)
     url = 'https://api.twitch.tv/helix/streams?user_login='+userName
     #url = url.rstrip()
-    client_id=os.environ.get("Client-ID-Twitch")
+    client_id = os.environ.get("Client-ID-Twitch")
 
     load_dotenv()
 
     API_HEADERS = {
-        'Client-ID' : '7613tns3t4kzf7r9d2b8y21znfwtv0',
+        'Client-ID' : client_id,
         'Authorization' : 'Bearer ' + token,
     }
 
