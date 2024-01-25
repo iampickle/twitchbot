@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+
+from flask import current_app
 from modules.twitterbot.db import *
 from modules.twitter import *
 import modules.weighting as weighting
@@ -38,6 +40,7 @@ class main:
         self.workdir = os.path.join(dir, channel)
         self.token = None
         self.log = None
+        self.now = None
 
     # folder routine2
     def sub(self):
@@ -45,56 +48,54 @@ class main:
         folder = self.channel + "-stream-" + str(today.strftime("%Y-%m-%d"))
         dbid = None
 
-        if os.path.isdir(workdir+'/'+folder) == False:
-            os.mkdir(workdir+'/'+folder)
+        if os.path.isdir(self.workdir+'/'+folder) == False:
+            os.mkdir(self.workdir+'/'+folder)
             self.log.info("📂 sub folder created")
         else:
             self.log.info("📂 sub folder allready created")
 
-        workdir = workdir+'/'+folder+'/'
+        current_workdir = self.workdir+'/'+folder+'/'
 
-        self.log.info("📂 working dir is: "+workdir)
+        self.log.info("📂 working dir is: "+current_workdir)
 
         if self.channel in channelconf['streamers']:
             if 'tbot' in channelconf['streamers'][self.channel]:
                 if os.environ.get("db-host"):
                     db = database()
                     dbid = db.create_frame(
-                        self.channel, now.strftime('%Y-%m-%d %H:%M:%S'))
+                        self.channel, self.now.strftime('%Y-%m-%d %H:%M:%S'))
                     db.cd()
                 self.log.info(
                     f'📑 writing to db as {self.channel} id is = {dbid}')
                 tweet_text(
-                    f'🔴 {self.cshannel} ist live!\nhttps://www.twitch.tv/{self.channel}\nTitel: {checkstream.get_title(self.channel, self.token)}\n#{self.channel}')
+                    f'🔴 {self.channel} ist live!\nhttps://www.twitch.tv/{self.channel}\nTitel: {checkstream.get_title(self.channel, self.token)}\n#{self.channel}')
                 self.log.info('📈 start plot and data collection')
                 plotp = Process(target=vs, args=(
-                    self.token, 900, workdir, self.channel, dbid))
+                    self.token, 900, current_workdir, self.channel, dbid))
                 plotp.start()
 
         self.log.info("⬇️ starting download")
-        filename = now.strftime("%H.%M")
-        dl_stream.dlstream(self.channel, filename, workdir,
+        filename = self.now.strftime("%H.%M")
+        dl_stream.dlstream(self.channel, filename, current_workdir,
                            self.token, today, dbid)
 
     def starup(self):
+        self.log = logbook.Logger(self.channel)
         notification.user = self.channel
 
         if os.path.isdir(dir+'/'+self.channel) == False:
             os.mkdir(dir+'/'+self.channel)
-            log.info("📂 folder created")
+            self.log.info("📂 folder created")
         else:
-            log.info("📂 folder allready created")
+            self.log.info("📂 folder allready created")
 
-        weighting.readstate(self.channel, log)
+        weighting.readstate(self.channel, self.log)
         wait = 0
         while True:
             try:
                 while True:
-                    global now
-                    now = datetime.now()
-                    self.log = logbook.Logger(self.channel)
+                    self.now = datetime.now()
                     # check if token is to old
-
                     if wait == 0:
                         wait, self.token = getauth.post(self.channel)
                     elif wait <= time.time():
@@ -106,7 +107,7 @@ class main:
                     if checkstream.checkUser(self.channel, self.token) == True:
                         self.log.info("🔴 is online")
                         weighting.onlinetimeweighting(self.channel, self.log)
-                        self.sub1()
+                        self.sub()
                     weights = weighting.analyseweights()
                     if weights == 'array error':
                         self.log.error(weights)
@@ -114,12 +115,14 @@ class main:
                     # look if array was set reacently and if not just look in hour now in array and the sleep accoringly
                     if len(weights) == 24:
                         time.sleep(120)
-                    elif now.hour in weights:
+                    elif self.now.hour in weights:
                         time.sleep(30)
                     else:
                         time.sleep(120)
+            except KeyboardInterrupt:
+                self.log.warn('stopping because of Keyboardinterrupt')
             except Exception as e:
-                log.warn(f'Main loop failed restarting, error-code: {e}')
+                self.log.error(f'Main loop failed restarting, error-code: {e}')
 
 
 def start_threads():
@@ -128,19 +131,21 @@ def start_threads():
     log.info("📂 save path is: "+dir)
     log.info("🧑‍🤝‍🧑 starting workers")
 
-    # with trio.open_nursery() as nursery:
-    # nursery.start_soon(uinput)
+    #adding processes to list
     for streamer in channelconf['streamers']:
         log.info('starting worker of: '+streamer)
         st = main(streamer)
         process_list.append(Process(target=st.starup))
-        # nursery.start_soon(starup, line.rstrip())
+        
+    #starting them from list  
     if process_list != 0:
         for process in process_list:
             process.start()
 
 
 if __name__ == "__main__":
+    #starting uptimecheck
     subprocess.Popen(['python', './modules/uptimecheck.py'])
-
+    #starting multiprocesses
     start_threads()
+    print('done')
