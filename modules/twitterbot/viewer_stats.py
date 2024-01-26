@@ -39,9 +39,6 @@ class vstats():
         self.workdir = os.path.join(workdir, 'analytics/')
         if not os.path.exists(self.workdir):
             os.makedirs(self.workdir)
-        if test == None:
-            pass
-            # self.start()
 
         # chat record vars
         self.bigbuarray = []
@@ -100,6 +97,11 @@ class vstats():
             # os.remove(os.path.join(workdir, 'analytics/vstats.tmp'))
         self.tmpfile = open(os.path.join(
             workdir, 'analytics/vstats.tmp'), 'a+')
+        
+        #start process      
+        if test == None:
+            pass
+            self.start()
 
     def collect_data(self):
         url = f'https://api.twitch.tv/helix/streams?user_login={self.channel}'
