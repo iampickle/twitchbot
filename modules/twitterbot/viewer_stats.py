@@ -242,6 +242,7 @@ class vstats():
 
                     if checkstream.checkUser(self.channel, self.token) == False:
                         print('exiting plotting')
+                        self.tmpfile.close()
                         break
                     else:
                         pass
@@ -251,54 +252,53 @@ class vstats():
             except KeyboardInterrupt:
                 print("Keyboard interrupt detected. Exiting loop...")
                 exit()
-            if os.environ.get("db-host"):
-                db = database()
-                db.dump_array_via_id(self.dbid, 'viewotime', dbarray)
-                db.cd()
+        if os.environ.get("db-host"):
+            db = database()
+            db.dump_array_via_id(self.dbid, 'viewotime', dbarray)
+            db.cd()
 
-            # Generate random vertical lines
-            image_paths = [x[1] for x in self.change_title]
-            # Generate random data for the graph
+        # Generate random vertical lines
+        image_paths = [x[1] for x in self.change_title]
+        # Generate random data for the graph
 
-            # Plot the graph and add indicators
-            plt.style.use('dark_background')
-            fig, ax = plt.subplots()
-            ax.plot(self.x_values, self.y_values,
-                    label='viewers')  # Random graph
+        # Plot the graph and add indicators
+        plt.style.use('dark_background')
+        fig, ax = plt.subplots()
+        ax.plot(self.x_values, self.y_values,label='viewers')
 
-            xs = [x[0] for x in self.change_title]
-            xs = np.asarray(xs)
-            ax.vlines(xs, 0, ax.get_ylim()[1], color='purple', lw=2, alpha=0.7)
+        xs = [x[0] for x in self.change_title]
+        xs = np.asarray(xs)
+        ax.vlines(xs, 0, ax.get_ylim()[1], color='purple', lw=2, alpha=0.7)
 
-            scaled_images_info = [load_and_resize_image(
-                path) for path in image_paths]
+        scaled_images_info = [load_and_resize_image(
+            path) for path in image_paths]
 
-            scalingfactor = 0.03
-            for (x, img, gn) in zip(xs, scaled_images_info, self.gns):
-                try:
-                    img_width, img_height = img.size
-                    scaled_width = int(img_width * scalingfactor)
-                    scaled_height = int(img_height * scalingfactor)
-                    imge = img.resize((scaled_width, scaled_height))
-                    ab = AnnotationBbox(OffsetImage(
-                        imge), (x, 1), frameon=False)
-                    ax.add_artist(ab)
+        scalingfactor = 0.03
+        for (x, img, gn) in zip(xs, scaled_images_info, self.gns):
+            try:
+                img_width, img_height = img.size
+                scaled_width = int(img_width * scalingfactor)
+                scaled_height = int(img_height * scalingfactor)
+                imge = img.resize((scaled_width, scaled_height))
+                ab = AnnotationBbox(OffsetImage(
+                    imge), (x, 1), frameon=False)
+                ax.add_artist(ab)
 
-                    # Add text below the image containing the game name
-                    # bbox_props = dict(boxstyle="square", facecolor="white", edgecolor="black", linewidth=2)  # Specify bounding box properties
-                    ax.text(x, -scaled_height*2.4,
-                            f'{gn}', ha='center', va='top', color='white', fontsize=5,)
-                except Exception as e:
-                    print(f"Error adding AnnotationBbox: {e}")
+                # Add text below the image containing the game name
+                # bbox_props = dict(boxstyle="square", facecolor="white", edgecolor="black", linewidth=2)  # Specify bounding box properties
+                ax.text(x, -scaled_height*2.4,
+                        f'{gn}', ha='center', va='top', color='white', fontsize=5,)
+            except Exception as e:
+                print(f"Error adding AnnotationBbox: {e}")
 
-            ax.legend()
+        ax.legend()
 
-            # Show the plot
-            plt.savefig(filename, dpi=300)
-            plt.close()
-            self.fileq.put([filename, self.categorylegend])
-            return filename
-            # os.remove(filename)
+        # Show the plot
+        plt.savefig(filename, dpi=300)
+        plt.close()
+        self.fileq.put([filename, self.categorylegend])
+        return filename
+        # os.remove(filename)
 
     def connect_to_twitch_chat(self):
         server = 'irc.chat.twitch.tv'
@@ -361,6 +361,7 @@ class vstats():
                                     self.irc.close()  # Close the socket connection
                                 except:
                                     pass
+                                self.ctmpfile.close()
                                 break
                 except Exception as e:
                     print(f'main error: {e}')
@@ -417,9 +418,11 @@ class vstats():
         f = self.fileq.get()
         a = self.arrayq.get()
         print('done')
-
-        os.remove(os.path.join(self.workdir, 'analytics/vstats.tmp'))
-        os.remove(os.path.join(self.workdir, 'analytics/chat.tmp'))
+        try:
+            os.remove(os.path.join(self.workdir, '/vstats.tmp'))
+            os.remove(os.path.join(self.workdir, '/chat.tmp'))
+        except Exception as e:
+            print(f'not able to delete tempfiles: {e}')
 
         tweet_pics(
             [f[0], a], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")
