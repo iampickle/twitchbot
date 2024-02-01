@@ -419,8 +419,8 @@ class vstats():
         a = self.arrayq.get()
         print('done')
         try:
-            os.remove(os.path.join(self.workdir, '/vstats.tmp'))
-            os.remove(os.path.join(self.workdir, '/chat.tmp'))
+            os.remove(os.path.join(self.workdir, 'vstats.tmp'))
+            os.remove(os.path.join(self.workdir, 'chat.tmp'))
         except Exception as e:
             print(f'not able to delete tempfiles: {e}')
 
