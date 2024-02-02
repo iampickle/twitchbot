@@ -234,9 +234,8 @@ class trimming:
 
 class sentimenttweet:
 
-    def __init__(self, log, inherent, channel, aresults, workdir, dbid=''):
+    def __init__(self, log, channel, aresults, workdir, dbid=''):
         self.log = log
-        self = inherent
         self.channel = channel
         self.aresults = aresults
         self.workdir = workdir
