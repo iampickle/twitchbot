@@ -19,12 +19,16 @@ from dotenv import load_dotenv
 from PIL import Image
 from io import BytesIO
 import numpy as np
+import logbook
+import sys
 load_dotenv()
 
 
 class vstats():
 
     def __init__(self, token, stime, workdir, channel, dbid=None, test=None):
+        logbook.StreamHandler(sys.stdout).push_application()
+        self.log = logbook.Logger(channel)
 
         self.client_id = os.environ.get("Client-ID-Twitch")
         self.token = token
@@ -53,9 +57,9 @@ class vstats():
         self.legendcount = 0
 
         # Check for temp files
-        print('checking for files')
+        self.log.info('checking for files')
         if os.path.exists(os.path.join(workdir, 'analytics/chat.tmp')):
-            print('found previous temp file, loading it ...')
+            self.log.info('found previous temp file, loading it ...')
             # Load tmp file
             with open(os.path.join(workdir, 'analytics/chat.tmp'), 'r') as temp_file:
                 content = temp_file.read()
@@ -72,7 +76,7 @@ class vstats():
         self.ctmpfile = open(os.path.join(self.workdir, 'chat.tmp'), 'a+')
 
         if os.path.exists(os.path.join(self.workdir, 'vstats.tmp')):
-            print('found previous temp file, loading it ...')
+            self.log.info('found previous temp file, loading it ...')
             # Load tmp file
             with open(os.path.join(workdir, 'analytics/vstats.tmp'), 'r') as temp_file:
                 content = temp_file.read()
@@ -129,7 +133,7 @@ class vstats():
                 img = Image.open(BytesIO(response.content))
                 return img
             else:
-                print(
+                self.log.error(
                     f"Error fetching image for category '{game_id}'. Status code: {response.status_code}")
                 return None
 
@@ -188,7 +192,7 @@ class vstats():
         self.tmpfile.write(str(chuck_json_string)+'\n')
         self.tmpfile.flush()
 
-        print('starting loop')
+        self.log.info('starting loop')
         while True:
             # data structure dict
             chuck = {'time': str(time.time()), 'categorylegend': None,
@@ -237,11 +241,11 @@ class vstats():
                     else:
                         dbarray.append([time.time(), data, viewer])
                 elif checkstream.checkUser(self.channel, self.token) == False:
-                    print('pre exit plotting waiting 15min')
+                    self.log.info('pre exit plotting waiting 15min')
                     time.sleep(900)
 
                     if checkstream.checkUser(self.channel, self.token) == False:
-                        print('exiting plotting')
+                        self.log.info('exiting plotting')
                         self.tmpfile.close()
                         break
                     else:
@@ -250,7 +254,7 @@ class vstats():
                 self.tmpfile.write(str(chuck_json_string)+'\n')
                 self.tmpfile.flush()
             except KeyboardInterrupt:
-                print("Keyboard interrupt detected. Exiting loop...")
+                self.log.info("Keyboard interrupt detected. Exiting loop...")
                 exit()
         if os.environ.get("db-host"):
             db = database()
@@ -289,7 +293,7 @@ class vstats():
                 ax.text(x, -scaled_height*2.4,
                         f'{gn}', ha='center', va='top', color='white', fontsize=5,)
             except Exception as e:
-                print(f"Error adding AnnotationBbox: {e}")
+                self.log.info(f"Error adding AnnotationBbox: {e}")
 
         ax.legend()
 
@@ -353,10 +357,10 @@ class vstats():
                     if c <= time.time() or timeout >= 20:
                         c = time.time() + 240
                         if checkstream.checkUser(self.channel, self.token) == False:
-                            print('pre exit chat waiting 15min')
+                            self.log.info('pre exit chat waiting 15min')
                             time.sleep(900)
                             if checkstream.checkUser(self.channel, self.token) == False:
-                                print('exiting chat')
+                                self.log.info('exiting chat')
                                 try:
                                     self.irc.close()  # Close the socket connection
                                 except:
@@ -364,9 +368,9 @@ class vstats():
                                 self.ctmpfile.close()
                                 break
                 except Exception as e:
-                    print(f'main error: {e}')
+                    self.log.error(f'main error: {e}')
         except KeyboardInterrupt:
-            print("Keyboard interrupt detected. Exiting loop...")
+            self.log.info("Keyboard interrupt detected. Exiting loop...")
             exit()
 
         if os.environ.get("db-host"):
@@ -375,7 +379,7 @@ class vstats():
             db.dump_array_via_id(self.dbid, 'topchatter', self.bigbuarray)
             db.cd()
 
-        print('plotting messages')
+        self.log.info('plotting messages')
         # Convert to a DataFrame and remove the Timestamp
         df = pd.DataFrame(self.bigbuarray, columns=[
                           'username', 'message', 'timestamp'])
@@ -397,7 +401,7 @@ class vstats():
 
         name = str(uuid.uuid4())+'.png'
         filename = os.path.join(self.workdir, name)
-        print('ploting table')
+        self.log.info('ploting table')
         fig.write_image(filename, scale=2)
 
         self.arrayq.put(filename)
@@ -417,12 +421,12 @@ class vstats():
         # Now retrieve the results
         f = self.fileq.get()
         a = self.arrayq.get()
-        print('done')
+        self.log.info('done')
         try:
             os.remove(os.path.join(self.workdir, 'vstats.tmp'))
             os.remove(os.path.join(self.workdir, 'chat.tmp'))
         except Exception as e:
-            print(f'not able to delete tempfiles: {e}')
+            self.log.warning(f'not able to delete tempfiles: {e}')
 
         tweet_pics(
             [f[0], a], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")
