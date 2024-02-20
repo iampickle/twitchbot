@@ -349,12 +349,14 @@ class init:
                                 self.workdir, dbid=self.dbid)
             st.tweetsentiment()
 
-        if self.test == 0 or 6 and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
+        if self.test == 0 or 6:
             self.log.info('upload to twitter')
             tr.twitter_upload()
+            
+        if channelconf['streamers'][self.channel]['tbot']['tiktokupload'] and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
             tiktok_upload(self.channel, self.date, os.path.join(
                 self.workdir, 'output/', 'stitched-video.mp4'))
-
+        
         if self.test == 0:
             try:
                 # os.remove(os.path.join(self.workdir, 'output.txt'))

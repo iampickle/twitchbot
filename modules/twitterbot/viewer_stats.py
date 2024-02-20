@@ -1,7 +1,7 @@
 import chunk
 import modules.checkstream as checkstream
 from ..twitter import *
-import datetime
+from datetime import datetime, timedelta
 import requests
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 from PIL import Image
 from io import BytesIO
 import numpy as np
+from collections import defaultdict
 import logbook
 import sys
 load_dotenv()
@@ -381,6 +382,7 @@ class vstats():
 
         self.log.info('plotting messages')
         # Convert to a DataFrame and remove the Timestamp
+        timestamps = [sublist[:3] for sublist in self.bigbuarray]
         df = pd.DataFrame(self.bigbuarray, columns=[
                           'username', 'message', 'timestamp'])
         df = df[['username', 'message']]  # Keep only 'username' and 'message'
@@ -404,7 +406,7 @@ class vstats():
         self.log.info('ploting table')
         fig.write_image(filename, scale=2)
 
-        self.arrayq.put(filename)
+        self.arrayq.put([filename, timestamps])
 
     def start(self):
         cd = Process(target=self.collect_data)
@@ -421,6 +423,45 @@ class vstats():
         # Now retrieve the results
         f = self.fileq.get()
         a = self.arrayq.get()
+        
+        message_dis_name_path = os.path.join(self.workdir, str(uuid.uuid4())+'.png')
+        
+        timestamps = a[1]
+        # Convert timestamps to datetime objects
+        timestamps = [datetime.utcfromtimestamp(ts) for ts in timestamps]
+
+        # Define bin size (in minutes)
+        bin_size = timedelta(minutes=10)  # 10 minutes
+
+        # Calculate message distribution over time using binning
+        distribution = defaultdict(int)
+        for timestamp in timestamps:
+            bin_start = timestamp - (timestamp - datetime.min) % bin_size
+            distribution[bin_start] += 1
+
+        # Extract sorted dates and counts
+        sorted_distribution = sorted(distribution.items())
+        dates, counts = zip(*sorted_distribution)
+
+        # Calculate density of messages for each time interval
+        message_density = np.array([distribution[dt] for dt, _ in sorted_distribution])
+
+        # Create the plot
+        plt.figure(figsize=(12, 6))
+        bar_width = 0.8  # Adjust the width of each bar
+        plt.bar(range(len(message_density)), message_density, color=plt.cm.hot(message_density / max(message_density)), width=bar_width)
+        plt.title('Message Density Over Time')
+        plt.xlabel('Time Interval')
+        plt.ylabel('Message Count')
+
+        # Show only every 10th x-axis label
+        x_labels = [dt.strftime('%H:%M') for dt, _ in sorted_distribution]
+        plt.xticks(np.arange(0, len(dates), 10), x_labels[::10], rotation=90)
+
+        plt.tight_layout()
+        plt.savefig(message_dis_name_path, dpi=300)
+        plt.close()
+
         self.log.info('done')
         try:
             os.remove(os.path.join(self.workdir, 'vstats.tmp'))
@@ -429,4 +470,4 @@ class vstats():
             self.log.warning(f'not able to delete tempfiles: {e}')
 
         tweet_pics(
-            [f[0], a], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")
+            [f[0], a[0], message_dis_name_path], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")
