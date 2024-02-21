@@ -244,9 +244,10 @@ def fixm(workdir, tempfilename, tempfilename2, filename, log, choosen, channel, 
         if cs == True:
             job(channel, ndate, lt1, fn)
         else:
+            start = time.time()
             subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
                             'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
-            log.info("🧰 file compressed")
+            log.info(f"🧰 file compressed in: {datetime.fromtimestamp(time.time()-start).strftime('%H:%M:%S')}")
 
     if cs == True:
         pass
