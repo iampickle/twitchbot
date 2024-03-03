@@ -215,12 +215,11 @@ class trimming:
 
                 self.uploadlist.append(str(rest)+'-part.mp4')
 
-        #self.log.info(len(self.uploadlist))
-        self.log.info(f'{self.uploadlist} videos to upload')
-
         sleep(10)
 
         if len(self.uploadlist) != 0:
+            #self.log.info(len(self.uploadlist))
+            self.log.info(f'{self.uploadlist} videos to upload')
             self.log.info('uploading ...')
             for c, ugoal in enumerate(self.uploadlist, start=1):
                 self.log.info(f'upload-{c}: {ugoal}')

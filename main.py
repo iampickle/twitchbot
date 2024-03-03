@@ -71,7 +71,7 @@ class main:
                     f'🔴 {self.channel} ist live!\nhttps://www.twitch.tv/{self.channel}\nTitel: {checkstream.get_title(self.channel, self.token)}\n#{self.channel}')
                 self.log.info('📈 start plot and data collection')
                 plotp = Process(target=vs, args=(
-                    self.token, 900, current_workdir, self.channel, dbid))
+                    self.token, 300, current_workdir, self.channel, dbid))
                 plotp.start()
 
         self.log.info("⬇️ starting download")

@@ -483,4 +483,4 @@ class vstats():
             self.log.warning(f'not able to delete tempfiles: {e}')
 
         tweet_pics(
-            [f[0], a[0], a[1]], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}") 
+            [f[0], a[0], a[1]], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")

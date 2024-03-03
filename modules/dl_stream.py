@@ -29,6 +29,10 @@ num = 0
 pool_sema = Semaphore(6)
 clip_start = 0
 
+def get_file_size_in_gb(file_path):
+    size_in_bytes = os.path.getsize(file_path)
+    size_in_gb = size_in_bytes / (1024 * 1024 * 1024)
+    return "{:.2f} GB".format(size_in_gb)
 
 def extract_time(filename):
     # Extrahiere die Uhrzeit (HH.MM) aus dem Dateinamen
@@ -179,10 +183,7 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
             tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(
                 channel)]['tbot']['words'], channel=channel, dbid=dbid)
             tbs.start()
-        if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
-            log.info('NOKEEP on deleting all files!')
-            shutil.rmtree(workdir)
-        elif 'ytupload' in channelconf['streamers'][channel]:
+        if 'ytupload' in channelconf['streamers'][channel]:
             if channelconf['streamers'][channel]['ytupload'] == True:
                 p = Process(target=fixm, args=(workdir, tempfilename5,
                             tempfilename2, filename, log, 1, channel, ndate, udate,))
@@ -206,16 +207,19 @@ def fixm(workdir, tempfilename, tempfilename2, filename, log, choosen, channel, 
     fn = filename
 
     if choosen == 0:
-        log.info("🧰 file fixed")
-        if cs == True:
-            job(channel, ndate, lt1, fn)
+        if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
+            log.info('NOKEEP on deleting all files!')
+            shutil.rmtree(workdir)
         else:
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
-                            'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
-        log.info("🧰 file compressed")
+            log.info("🧰 file fixed")
+            if cs == True:
+                job(channel, ndate, lt1, fn)
+            else:
+                subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
+                                'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
+                log.info("🧰 file compressed")
 
     elif choosen == 1:
-
         vfile = VideoFileClip(os.path.join(workdir, lt1))
         duration = vfile.duration
         vfile.close()
@@ -240,14 +244,18 @@ def fixm(workdir, tempfilename, tempfilename2, filename, log, choosen, channel, 
 
         else:
             ytupload.upload(workdir, lt1, udate, channel)
-
-        if cs == True:
-            job(channel, ndate, lt1, fn)
+        if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
+            log.info('NOKEEP on deleting all files!')
+            shutil.rmtree(workdir)
         else:
-            start = time.time()
-            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
-                            'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
-            log.info(f"🧰 file compressed in: {datetime.fromtimestamp(time.time()-start).strftime('%H:%M:%S')}")
+            if cs == True:
+                job(channel, ndate, lt1, fn)
+            else:
+                old_gb = get_file_size_in_gb(workdir + lt1)
+                start = time.time()
+                subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
+                                'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
+                log.info(f"🧰 file compressed in: {datetime.fromtimestamp(time.time()-start).strftime('%H:%M:%S')}, {old_gb} -> {get_file_size_in_gb(workdir+fn+'.mp4')}")
 
     if cs == True:
         pass
