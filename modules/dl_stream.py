@@ -15,7 +15,7 @@ import shutil
 import modules.twitterbot.youtube_upload as ytupload
 from modules.notification import notification
 import modules.checkstream as checkstream
-from modules.compress_server_client import job
+""" from modules.compress_server_client import job """
 
 noti = notification()
 
@@ -46,7 +46,7 @@ def extract_time(filename):
 
 
 def dek(workdir, tempfilename, channel, log, token, pausetime=720):
-    noti.message("starting download of: "+channel)
+    noti.message(f"starting download of: {channel}")
     log.info("⬇️ download started")
 
     try:
@@ -212,12 +212,13 @@ def fixm(workdir, tempfilename, tempfilename2, filename, log, choosen, channel, 
             shutil.rmtree(workdir)
         else:
             log.info("🧰 file fixed")
-            if cs == True:
+            """ if cs == True:
                 job(channel, ndate, lt1, fn)
-            else:
-                subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
-                                'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
-                log.info("🧰 file compressed")
+             else:
+            """
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
+                            'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
+            log.info("🧰 file compressed")
 
     elif choosen == 1:
         vfile = VideoFileClip(os.path.join(workdir, lt1))
@@ -248,14 +249,14 @@ def fixm(workdir, tempfilename, tempfilename2, filename, log, choosen, channel, 
             log.info('NOKEEP on deleting all files!')
             shutil.rmtree(workdir)
         else:
-            if cs == True:
+            """ if cs == True:
                 job(channel, ndate, lt1, fn)
-            else:
-                old_gb = get_file_size_in_gb(workdir + lt1)
-                start = time.time()
-                subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
-                                'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
-                log.info(f"🧰 file compressed in: {datetime.fromtimestamp(time.time()-start).strftime('%H:%M:%S')}, {old_gb} -> {get_file_size_in_gb(workdir+fn+'.mp4')}")
+            else: """
+            old_gb = get_file_size_in_gb(workdir + lt1)
+            start = time.time()
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
+                            'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
+            log.info(f"🧰 file compressed in: {datetime.fromtimestamp(time.time()-start).strftime('%H:%M:%S')}, {old_gb} -> {get_file_size_in_gb(workdir+fn+'.mp4')}")
 
     if cs == True:
         pass
