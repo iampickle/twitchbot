@@ -2,6 +2,7 @@ import chunk
 import modules.checkstream as checkstream
 from ..twitter import *
 import datetime
+from datetime import timedelta
 import requests
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
@@ -19,12 +20,17 @@ from dotenv import load_dotenv
 from PIL import Image
 from io import BytesIO
 import numpy as np
+from collections import defaultdict
+import logbook
+import sys
 load_dotenv()
 
 
 class vstats():
 
-    def __init__(self, token, stime, workdir, channel, dbid=None, test=None):
+    def __init__(self, token, stime, workdir, channel, exittime=900, dbid=None, test=None):
+        logbook.StreamHandler(sys.stdout).push_application()
+        self.log = logbook.Logger(channel)
 
         self.client_id = os.environ.get("Client-ID-Twitch")
         self.token = token
@@ -35,13 +41,11 @@ class vstats():
         self.fileq = Queue()
         self.arrayq = Queue()
         self.test = test
+        self.exittime = exittime
 
         self.workdir = os.path.join(workdir, 'analytics/')
         if not os.path.exists(self.workdir):
             os.makedirs(self.workdir)
-        if test == None:
-            pass
-            # self.start()
 
         # chat record vars
         self.bigbuarray = []
@@ -56,9 +60,9 @@ class vstats():
         self.legendcount = 0
 
         # Check for temp files
-        print('checking for files')
+        self.log.info('checking for files')
         if os.path.exists(os.path.join(workdir, 'analytics/chat.tmp')):
-            print('found previous temp file, loading it ...')
+            self.log.info('found previous temp file, loading it ...')
             # Load tmp file
             with open(os.path.join(workdir, 'analytics/chat.tmp'), 'r') as temp_file:
                 content = temp_file.read()
@@ -75,7 +79,7 @@ class vstats():
         self.ctmpfile = open(os.path.join(self.workdir, 'chat.tmp'), 'a+')
 
         if os.path.exists(os.path.join(self.workdir, 'vstats.tmp')):
-            print('found previous temp file, loading it ...')
+            self.log.info('found previous temp file, loading it ...')
             # Load tmp file
             with open(os.path.join(workdir, 'analytics/vstats.tmp'), 'r') as temp_file:
                 content = temp_file.read()
@@ -100,6 +104,12 @@ class vstats():
             # os.remove(os.path.join(workdir, 'analytics/vstats.tmp'))
         self.tmpfile = open(os.path.join(
             workdir, 'analytics/vstats.tmp'), 'a+')
+        sys.stdout.flush()
+
+        # start process
+        if test == None:
+            pass
+            self.start()
 
     def collect_data(self):
         url = f'https://api.twitch.tv/helix/streams?user_login={self.channel}'
@@ -127,7 +137,7 @@ class vstats():
                 img = Image.open(BytesIO(response.content))
                 return img
             else:
-                print(
+                self.log.error(
                     f"Error fetching image for category '{game_id}'. Status code: {response.status_code}")
                 return None
 
@@ -186,7 +196,7 @@ class vstats():
         self.tmpfile.write(str(chuck_json_string)+'\n')
         self.tmpfile.flush()
 
-        print('starting loop')
+        self.log.info('starting loop')
         while True:
             # data structure dict
             chuck = {'time': str(time.time()), 'categorylegend': None,
@@ -235,11 +245,13 @@ class vstats():
                     else:
                         dbarray.append([time.time(), data, viewer])
                 elif checkstream.checkUser(self.channel, self.token) == False:
-                    print('pre exit plotting waiting 15min')
-                    time.sleep(900)
+                    self.log.info('pre exit plotting waiting 15min')
+                    sys.stdout.flush()
+                    time.sleep(self.exittime)
 
                     if checkstream.checkUser(self.channel, self.token) == False:
-                        print('exiting plotting')
+                        self.log.info('exiting plotting')
+                        self.tmpfile.close()
                         break
                     else:
                         pass
@@ -247,33 +259,33 @@ class vstats():
                 self.tmpfile.write(str(chuck_json_string)+'\n')
                 self.tmpfile.flush()
             except KeyboardInterrupt:
-                print("Keyboard interrupt detected. Exiting loop...")
+                self.log.info("Keyboard interrupt detected. Exiting loop...")
                 exit()
-            if os.environ.get("db-host"):
-                db = database()
-                db.dump_array_via_id(self.dbid, 'viewotime', dbarray)
-                db.cd()
+        if os.environ.get("db-host"):
+            db = database()
+            db.dump_array_via_id(self.dbid, 'viewotime', dbarray)
+            db.cd()
 
-            # Generate random vertical lines
-            image_paths = [x[1] for x in self.change_title]
-            # Generate random data for the graph
+        # Generate random vertical lines
+        image_paths = [x[1] for x in self.change_title]
+        # Generate random data for the graph
 
-            # Plot the graph and add indicators
-            plt.style.use('dark_background')
-            fig, ax = plt.subplots()
-            ax.plot(self.x_values, self.y_values,
-                    label='viewers')  # Random graph
+        # Plot the graph and add indicators
+        plt.style.use('dark_background')
+        fig, ax = plt.subplots()
+        ax.plot(self.x_values, self.y_values, label='viewers')
 
-            xs = [x[0] for x in self.change_title]
-            xs = np.asarray(xs)
-            ax.vlines(xs, 0, ax.get_ylim()[1], color='purple', lw=2, alpha=0.7)
+        xs = [x[0] for x in self.change_title]
+        xs = np.asarray(xs)
+        ax.vlines(xs, 0, ax.get_ylim()[1], color='purple', lw=2, alpha=0.7)
 
-            scaled_images_info = [load_and_resize_image(
-                path) for path in image_paths]
+        scaled_images_info = [load_and_resize_image(
+            path) for path in image_paths]
 
-            scalingfactor = 0.03
-            for (x, img, gn) in zip(xs, scaled_images_info, self.gns):
-                try:
+        scalingfactor = 0.03
+        for (x, img, gn) in zip(xs, scaled_images_info, self.gns):
+            try:
+                if img:
                     img_width, img_height = img.size
                     scaled_width = int(img_width * scalingfactor)
                     scaled_height = int(img_height * scalingfactor)
@@ -286,17 +298,18 @@ class vstats():
                     # bbox_props = dict(boxstyle="square", facecolor="white", edgecolor="black", linewidth=2)  # Specify bounding box properties
                     ax.text(x, -scaled_height*2.4,
                             f'{gn}', ha='center', va='top', color='white', fontsize=5,)
-                except Exception as e:
-                    print(f"Error adding AnnotationBbox: {e}")
+            except Exception as e:
+                self.log.info(f"Error adding AnnotationBbox: {e}")
+                sys.stdout.flush()
 
-            ax.legend()
+        ax.legend()
 
-            # Show the plot
-            plt.savefig(filename, dpi=300)
-            plt.close()
-            self.fileq.put([filename, self.categorylegend])
-            return filename
-            # os.remove(filename)
+        # Show the plot
+        plt.savefig(filename, dpi=300)
+        plt.close()
+        self.fileq.put([filename, self.categorylegend])
+        return filename
+        # os.remove(filename)
 
     def connect_to_twitch_chat(self):
         server = 'irc.chat.twitch.tv'
@@ -328,6 +341,7 @@ class vstats():
         c = time.time() + 240
         timeout = 0
         self.irc = self.connect_to_twitch_chat()
+
         try:
             while True:
                 try:
@@ -351,19 +365,21 @@ class vstats():
                     if c <= time.time() or timeout >= 20:
                         c = time.time() + 240
                         if checkstream.checkUser(self.channel, self.token) == False:
-                            print('pre exit chat waiting 15min')
-                            time.sleep(900)
+                            self.log.info('pre exit chat waiting 15min')
+                            sys.stdout.flush()
+                            time.sleep(self.exittime)
                             if checkstream.checkUser(self.channel, self.token) == False:
-                                print('exiting chat')
+                                self.log.info('exiting chat')
                                 try:
                                     self.irc.close()  # Close the socket connection
                                 except:
                                     pass
+                                self.ctmpfile.close()
                                 break
                 except Exception as e:
-                    print(f'main error: {e}')
+                    self.log.error(f'main error: {e}')
         except KeyboardInterrupt:
-            print("Keyboard interrupt detected. Exiting loop...")
+            self.log.info("Keyboard interrupt detected. Exiting loop...")
             exit()
 
         if os.environ.get("db-host"):
@@ -372,8 +388,9 @@ class vstats():
             db.dump_array_via_id(self.dbid, 'topchatter', self.bigbuarray)
             db.cd()
 
-        print('plotting messages')
+        self.log.info('plotting messages')
         # Convert to a DataFrame and remove the Timestamp
+        timestamps = [sublist[:3] for sublist in self.bigbuarray]
         df = pd.DataFrame(self.bigbuarray, columns=[
                           'username', 'message', 'timestamp'])
         df = df[['username', 'message']]  # Keep only 'username' and 'message'
@@ -394,10 +411,53 @@ class vstats():
 
         name = str(uuid.uuid4())+'.png'
         filename = os.path.join(self.workdir, name)
-        print('ploting table')
+        self.log.info('ploting table')
         fig.write_image(filename, scale=2)
 
-        self.arrayq.put(filename)
+        message_dis_name_path = os.path.join(
+            self.workdir, str(uuid.uuid4())+'.png')
+
+        # Convert timestamps to datetime object
+        timestamps = [float(timestamp) for _, _, timestamp in timestamps]
+
+        # Define bin size (in minutes)
+        bin_size = timedelta(minutes=10)  # 10 minutes
+
+        # Calculate message distribution over time using binning
+        distribution = defaultdict(int)
+        for timestamp in timestamps:
+            dt = datetime.datetime.fromtimestamp(timestamp)
+            bin_start = dt - (dt - datetime.datetime.min) % bin_size
+            distribution[bin_start] += 1
+
+
+        # Extract sorted dates and counts
+        sorted_distribution = sorted(distribution.items())
+        dates, counts = zip(*sorted_distribution)
+
+        # Calculate density of messages for each time interval
+        message_density = np.array([distribution[dt]
+                                   for dt, _ in sorted_distribution])
+
+        # Create the plot
+        plt.figure(figsize=(12, 6))
+        plt.style.use('dark_background')
+        bar_width = 0.8  # Adjust the width of each bar
+        plt.bar(range(len(message_density)), message_density, color=plt.cm.hot(
+            message_density / max(message_density)), width=bar_width)
+        plt.title('Message Density Over Time')
+        plt.xlabel('Time Interval')
+        plt.ylabel('Message Count')
+
+        # Show only every 10th x-axis label
+        x_labels = [dt.strftime('%H:%M') for dt, _ in sorted_distribution]
+        plt.xticks(np.arange(0, len(dates), 10), x_labels[::10], rotation=90)
+
+        plt.tight_layout()
+        plt.savefig(message_dis_name_path, dpi=300)
+        plt.close()
+
+        self.arrayq.put([filename, message_dis_name_path])
 
     def start(self):
         cd = Process(target=self.collect_data)
@@ -414,10 +474,13 @@ class vstats():
         # Now retrieve the results
         f = self.fileq.get()
         a = self.arrayq.get()
-        print('done')
 
-        os.remove(os.path.join(self.workdir, 'analytics/vstats.tmp'))
-        os.remove(os.path.join(self.workdir, 'analytics/chat.tmp'))
+        self.log.info('done')
+        try:
+            os.remove(os.path.join(self.workdir, 'vstats.tmp'))
+            os.remove(os.path.join(self.workdir, 'chat.tmp'))
+        except Exception as e:
+            self.log.warning(f'not able to delete tempfiles: {e}')
 
         tweet_pics(
-            [f[0], a], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")
+            [f[0], a[0], a[1]], f"chart of viewercount and top messages of stream from: {self.channel}\r\r{''.join(f[1])}")

@@ -60,7 +60,7 @@ def upload(workdir, vid, vid_title, creator):
 
     # tweeting video link
     tweet_text(
-        f'{str(creator)} backup-vod-link vom: {str(vid_title)} 🙃\nhttps://www.youtube.com/watch?v={str(video.id)}')
+        f'📺 {str(creator)} YT-backup {str(vid_title)} \nhttps://www.youtube.com/watch?v={str(video.id)}')
 
 
 if __name__ == "__main__":

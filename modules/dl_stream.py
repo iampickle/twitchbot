@@ -12,10 +12,11 @@ from moviepy.editor import *
 import json
 import shutil
 
+from modules.twitterbot.fckdmca import dmcaf
 import modules.twitterbot.youtube_upload as ytupload
 from modules.notification import notification
 import modules.checkstream as checkstream
-from modules.compress_server_client import job
+""" from modules.compress_server_client import job """
 
 noti = notification()
 
@@ -30,6 +31,12 @@ pool_sema = Semaphore(6)
 clip_start = 0
 
 
+def get_file_size_in_gb(file_path):
+    size_in_bytes = os.path.getsize(file_path)
+    size_in_gb = size_in_bytes / (1024 * 1024 * 1024)
+    return "{:.2f} GB".format(size_in_gb)
+
+
 def extract_time(filename):
     # Extrahiere die Uhrzeit (HH.MM) aus dem Dateinamen
     time_str = os.path.splitext(filename)[0]
@@ -42,7 +49,7 @@ def extract_time(filename):
 
 
 def dek(workdir, tempfilename, channel, log, token, pausetime=720):
-    noti.message("starting download of: "+channel)
+    noti.message(f"starting download of: {channel}")
     log.info("⬇️ download started")
 
     try:
@@ -179,10 +186,7 @@ def dlstream(channel, filename, workdir, token, ndate, dbid=None):
             tbs = tb.init(os.path.join(workdir, tempfilename5), channelconf['streamers'][str(
                 channel)]['tbot']['words'], channel=channel, dbid=dbid)
             tbs.start()
-        if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
-            log.info('NOKEEP on deleting all files!')
-            shutil.rmtree(workdir)
-        elif 'ytupload' in channelconf['streamers'][channel]:
+        if 'ytupload' in channelconf['streamers'][channel]:
             if channelconf['streamers'][channel]['ytupload'] == True:
                 p = Process(target=fixm, args=(workdir, tempfilename5,
                             tempfilename2, filename, log, 1, channel, ndate, udate,))
@@ -206,21 +210,38 @@ def fixm(workdir, tempfilename, tempfilename2, filename, log, choosen, channel, 
     fn = filename
 
     if choosen == 0:
-        log.info("🧰 file fixed")
-        if cs == True:
-            job(channel, ndate, lt1, fn)
+        if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
+            log.info('NOKEEP on deleting all files!')
+            shutil.rmtree(workdir)
         else:
+            log.info("🧰 file fixed")
+            """ if cs == True:
+                job(channel, ndate, lt1, fn)
+             else:
+            """
             subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
                             'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
-        log.info("🧰 file compressed")
+            log.info("🧰 file compressed")
 
     elif choosen == 1:
+        if channelconf['streamers'][channel]['fckdmca'] == True:
+            killmusic = dmcaf(workdir, lt1)
+            log.info('🎛️ sepperating vocal stem')
+            killmusic.sepperate()
+            log.info('🎛️ remuxing new audio with video')
+            novocalvideo = killmusic.patch()
+            log.info('🎛️ done!')
 
-        vfile = VideoFileClip(os.path.join(workdir, lt1))
+            vfile = VideoFileClip(os.path.join(
+                workdir, '/output/', novocalvideo))
+        else:
+            vfile = VideoFileClip(os.path.join(workdir, lt1))
+
         duration = vfile.duration
         vfile.close()
+
         if duration >= 43200:
-            vlist = ytupload.yt_pre_splitter(workdir, lt1)
+            vlist = ytupload.yt_pre_splitter(workdir, novocalvideo)
             log.info("⬆️ uploading to youtube")
             print(vlist)
             try:
@@ -239,14 +260,20 @@ def fixm(workdir, tempfilename, tempfilename2, filename, log, choosen, channel, 
                 log.info("⬆️ youtube upload failed")
 
         else:
-            ytupload.upload(workdir, lt1, udate, channel)
-
-        if cs == True:
-            job(channel, ndate, lt1, fn)
+            ytupload.upload(workdir, novocalvideo, udate, channel)
+        if 'NOKEEP' in channelconf['streamers'][channel] and channelconf['streamers'][channel]['NOKEEP'] == True:
+            log.info('NOKEEP on deleting all files!')
+            shutil.rmtree(workdir)
         else:
+            """ if cs == True:
+                job(channel, ndate, lt1, fn)
+            else: """
+            old_gb = get_file_size_in_gb(workdir + lt1)
+            start = time.time()
             subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-i', workdir + lt1, '-c:v',
                             'hevc_nvenc', '-preset', 'medium', '-c:a', 'copy', workdir + fn + ".mp4"])
-            log.info("🧰 file compressed")
+            log.info(
+                f"🧰 file compressed in: {datetime.fromtimestamp(time.time()-start).strftime('%H:%M:%S')}, {old_gb} -> {get_file_size_in_gb(workdir+fn+'.mp4')}")
 
     if cs == True:
         pass

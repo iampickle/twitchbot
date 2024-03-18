@@ -10,12 +10,14 @@ from vosk import SetLogLevel
 from moviepy.config import change_settings
 from moviepy.editor import *
 from time import sleep
-from datetime import timedelta
+import time
+from datetime import timedelta, datetime
 from ast import Try
 from genericpath import exists
 import json
 import os
-from venv import logger
+import logbook
+import sys
 from dotenv import load_dotenv
 load_dotenv()
 change_settings({"FFMPEG_BINARY": "ffmpeg"})
@@ -44,7 +46,7 @@ class wordprep:
         self.vfile = vfile
     # obsolete
     """ def convertevideotowav(self):
-        print('converting')
+        self.log.info('converting')
         sound = AudioFileClip(os.path.join(self.workdir,self.vfile))
         sound.write_audiofile(self.afilename, fps=44100, nbytes=2, buffersize=2000, ffmpeg_params=["-ac", "1"], write_logfile=False, verbose=True)
     """
@@ -56,7 +58,8 @@ class wordprep:
 class trimming:
     noti = notification()
 
-    def __init__(self, results, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5, addittion=None):
+    def __init__(self, log, results, workdir, vfile, word, channel, startpadding=0.7, endpadding=0.5, addittion=None):
+        self.log = log
         self.workdir = workdir
         self.vfile = vfile
         self.word = word
@@ -73,8 +76,8 @@ class trimming:
         return str(timedelta(seconds=intime))[:-4]
 
     def trim_on_word(self):
-        print(self.word)
-        print("snipping")
+        self.log.info(self.word)
+        self.log.info("snipping")
     # with open(os.path.join(self.workdir, 'output.txt'), 'r') as fr:
         for line in self.results:
             # line = str(line.rstrip())
@@ -94,11 +97,11 @@ class trimming:
                 pass
 
         if count == 0:
-            print('passing because no words to process')
+            self.log.warning('passing because no words to process')
             return
 
-        print(f'{count} {self.word}\'s in file')
-        print('appending to cutting list ...')
+        self.log.info(f'{count} {self.word}\'s in file')
+        self.log.info('appending to cutting list ...')
         self.noti.message(f'there are {count} {self.word}, to be processed')
 
         if os.path.isdir(os.path.join(self.workdir, 'output')) == False:
@@ -131,11 +134,9 @@ class trimming:
                             self.editlist.append(x)
                         # print('append to list\n')
                     except Exception as e:
-                        print('there was n error with  appending the file:'+str(e))
-                        print(line)
-                        pass
+                        self.log.error('there was n error with  appending the file:'+str(e)+'\n'+line)
 
-            print("stitching")
+            self.log.info("stitching")
 
             if self.addition != None:
                 filename = f'{self.addition}stitched-video.mp4'
@@ -152,7 +153,7 @@ class trimming:
 
             os.chdir(odir)
 
-            print('closing all clips')
+            self.log.info('closing all clips')
             for x in self.editlist:
                 x.close()
             vvar.close()
@@ -168,7 +169,7 @@ class trimming:
         duration = clip.duration
         clip.close()
 
-        print('duration:', duration)
+        self.log.info('duration:', duration)
         if duration > 120:
             timessecons = clip.duration // 120
             rest = clip.duration % 120
@@ -178,7 +179,7 @@ class trimming:
             while n != timessecons:
                 start = 120 * n
                 end = 120 * n + 120
-                print('n', start, end)
+                #print('n', start, end)
 
                 odir = os.getcwd()
                 os.chdir(os.path.join(self.workdir, 'output/'))
@@ -197,10 +198,10 @@ class trimming:
                 clip = VideoFileClip(os.path.join(
                     self.workdir, 'output/', 'stitched-video.mp4'))
                 duration = clip.duration
-                print(timessecons, duration)
+                #print(timessecons, duration)
                 start = 120 * timessecons
                 end = start + rest
-                print('rest', start, end)
+                #print('rest', start, end)
 
                 odir = os.getcwd()
                 os.chdir(os.path.join(self.workdir, 'output/'))
@@ -214,26 +215,26 @@ class trimming:
 
                 self.uploadlist.append(str(rest)+'-part.mp4')
 
-        print(len(self.uploadlist))
-        print(self.uploadlist)
-
         sleep(10)
 
         if len(self.uploadlist) != 0:
-            print('uploading ...')
+            #self.log.info(len(self.uploadlist))
+            self.log.info(f'{self.uploadlist} videos to upload')
+            self.log.info('uploading ...')
             for c, ugoal in enumerate(self.uploadlist, start=1):
-                print(f'upload-{c}: {ugoal}')
+                self.log.info(f'upload-{c}: {ugoal}')
                 tweet_media(self.workdir+'/output/'+ugoal, '#' +
                             self.channel+' '+str(c)+'/'+str(len(self.uploadlist)))
         else:
-            print('uploading')
+            self.log.info('uploading')
             tweet_media(self.workdir+'/output/' +
                         'stitched-video.mp4', '#'+self.channel)
 
 
 class sentimenttweet:
 
-    def __init__(self, channel, aresults, workdir, dbid=''):
+    def __init__(self, log, channel, aresults, workdir, dbid=''):
+        self.log = log
         self.channel = channel
         self.aresults = aresults
         self.workdir = workdir
@@ -242,7 +243,7 @@ class sentimenttweet:
     def tweetsentiment(self):
 
         if self.aresults == []:
-            print('no resilts to process')
+            self.log.info('no results to process')
             if os.environ.get("db-host"):
                 db = database()
                 db.dump_array_via_id(self.dbid, 'emotions', [])
@@ -257,31 +258,36 @@ class sentimenttweet:
 
 class init:
     def __init__(self, path, word, sp=5, ep=3, channel='', test=False, dbid=None, addittion=None):
+        logbook.StreamHandler(sys.stdout).push_application()
+        self.log = logbook.Logger(channel)
+        
         patharray = path.split('/')
         self.workdir = "/".join(patharray[:-1])
-        print(f'working dir set to: {self.workdir}')
+        self.log.info(f'working dir set to: {self.workdir}')
         self.vfile = patharray[-1:][0]
-        print(f'filename: {self.vfile}')
+        self.log.info(f'filename: {self.vfile}')
+        
         self.word = word
         self.channel = channel
         self.dbid = dbid
         self.addittion = addittion
         match = re.search(r'\d{4}-\d{2}-\d{2}', path)
+        
         if match:
             self.date = match.group()
         else:
-            print('no match for date in path string!')
+            self.log.warning('no match for date in path string!')
             self.date = None
         try:
             if channelconf['streamers'][channel]['tbot']['start'] and channelconf['streamers'][channel]['tbot']['end']:
                 self.sp = channelconf['streamers'][channel]['tbot']['start']
                 self.ep = channelconf['streamers'][channel]['tbot']['end']
         except:
-            print('start/end puffer not defined setting standart values')
+            self.log.warning('start/end puffer not defined setting standart values')
             self.sp = sp
             self.ep = ep
         self.test = test
-        print(f'|{self.sp}| + |video| + |{self.ep}|')
+        self.log.info(f'|{self.sp}| + |video| + |{self.ep}|')
 
     def start(self):
         """cv = combinevids(self.workdir)
@@ -290,19 +296,21 @@ class init:
         if self.test == 0 or 3 or 4 or 5:
             wp = wordprep(self.workdir, self.vfile)
             if os.path.isfile(os.path.join(self.workdir, 'output.txt')) == True:
-                print('skipping analyse output.txt exists!')
+                self.log.info('skipping analyse output.txt exists!')
                 aresults = []
                 with open(os.path.join(self.workdir, 'output.txt'), 'r') as fr:
                     for line in fr:
                         # line = str(line.rstrip())
                         aresults.append(line)
             else:
+                start = time.time()
                 aresults = wp.analyse()
+                self.log.info(f'time elapsed: {datetime.fromtimestamp(time.time()-start).strftime("%H:%M:%S")}')
 
                 sleep(10)
         # database upload words
         if self.test == False and self.dbid != None:
-            print('uploading word to db')
+            self.log.info('uploading word to db')
             dbres = []
             for line in aresults:
                 try:
@@ -326,30 +334,32 @@ class init:
 
         # trim word to right lengt
         if self.test == 0 or 1 or 4 or 5 or 6:
-            print('trimming words')
+            self.log.info('trimming words')
             # trimming and concating video also uplad to twitter
-            tr = trimming(aresults, self.workdir, self.vfile, self.word,
+            tr = trimming(self.log, aresults, self.workdir, self.vfile, self.word,
                           self.channel, self.sp, self.ep, self.addittion)
             tr.trim_on_word()
 
         # do histogramm and Vader analytics
         if self.test == 0:
             # tweet sentiment analyses
-            print('Vader analytic and histogram')
-            st = sentimenttweet(self.channel, aresults,
+            self.log.info('Vader analytic and histogram')
+            st = sentimenttweet(self.log, self.channel, aresults,
                                 self.workdir, dbid=self.dbid)
             st.tweetsentiment()
 
-        if self.test == 0 or 6 and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
-            print('upload to twitter')
+        if self.test == 0 or 6:
+            self.log.info('upload to twitter')
             tr.twitter_upload()
+            
+        if channelconf['streamers'][self.channel]['tbot']['tiktokupload'] and self.date != None and channelconf['streamers'][self.channel]['tbot']['tiktokupload'] == True:
             tiktok_upload(self.channel, self.date, os.path.join(
                 self.workdir, 'output/', 'stitched-video.mp4'))
-
+        
         if self.test == 0:
             try:
                 # os.remove(os.path.join(self.workdir, 'output.txt'))
                 # os.remove(os.path.join(self.workdir, self.vfile))
                 pass
             except Exception as e:
-                print('faild to delete temp files', e)
+                self.log.error('faild to delete temp files', e)

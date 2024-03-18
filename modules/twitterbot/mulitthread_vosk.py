@@ -127,14 +127,8 @@ def startanalysing(filename, workdir):
     audio_clip = AudioFileClip(filename)
     audio_duration = audio_clip.duration
     print(f'audio lenth: {audio_duration}')
-
-    startt = time.time()
     # Führe die Transkription durch
     results = transcribe_audio(filename, num_threads)
-    endt = time.time()
-    
-    elaps = endt - startt
-    print(f'time elapsed: {elaps}s')
 
     # Schreibe die Ergebnisse in eine Textdatei
     with open(workdir+'output.txt', 'w') as f:
